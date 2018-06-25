@@ -117,8 +117,8 @@
 			</div>
 		</footer>
 
-		<script src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
-		<script src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
+		<script async src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
+		<script async src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
 
 		<script>
       activate_colorbox();

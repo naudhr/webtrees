@@ -100,8 +100,8 @@ class PageController extends BaseController {
 	public function pageFooter() {
 		echo
 			Theme::theme()->footerContainer() .
-			'<script src="' . e(WT_ASSETS_URL . 'js/vendor.js') . '"></script>' .
-			'<script src="' . e(WT_ASSETS_URL . 'js/webtrees.js') . '"></script>' .
+			'<script async src="' . e(WT_ASSETS_URL . 'js/vendor.js') . '"></script>' .
+			'<script async src="' . e(WT_ASSETS_URL . 'js/webtrees.js') . '"></script>' .
 			$this->getJavascript() .
 			Theme::theme()->hookFooterExtraJavascript() .
 			//DebugBar::renderHead() .
