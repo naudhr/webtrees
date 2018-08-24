@@ -15,7 +15,8 @@
 		"platform": {
 			"php" : "7.0.8"
 		},
-		"sort-packages": true
+		"sort-packages": true,
+		"process-timeout": 3600
 	},
 	"require": {
 		"ext-gd": "*",
@@ -37,6 +38,7 @@
 		"league/glide": "~1.2",
 		"ramsey/uuid": "~3.6",
 		"swiftmailer/swiftmailer": "~5.0",
+		"symfony/expression-language": "~3.3",
 		"symfony/http-foundation": "~3.3",
 		"symfony/http-kernel": "~3.3",
 		"symfony/polyfill-mbstring": "~1.4",
@@ -52,6 +54,44 @@
 		"php-coveralls/php-coveralls": "*"
 	},
 	"scripts": {
+                "webtrees-build": [
+                    "@composer webtrees-mo",
+                    "git checkout language/en-US.mo",
+                    "rm -Rf webtrees/",
+                    "git archive --prefix=webtrees/ HEAD --format=tar | tar -x",
+                    "cp language/*.mo webtrees/language/",
+                    "zip --quiet --recurse-paths --move -9 webtrees.zip webtrees"
+                ],
+                "webtrees-check": [
+                    "### PHP-CODE-ANALYZER",
+                    "phpca --since-version=7.0 app/",
+                    "### PHP-CODE-FIXER",
+                    "phpcf app/",
+                    "### PAHOUT",
+                    "pahout --php-version 7.0.8 --ignore-paths=data .",
+                    "### PHP-CODE-SNIFFER",
+                    "phpcs --standard=PSR12 -s --exclude=Generic.Files.LineLength,PSR2.ControlStructures.ControlStructureSpacing,PSR2.ControlStructures.SwitchDeclaration app routes",
+                    "### PHAN",
+                    "phan --directory . --exclude-directory-list data,resources,routes,tests,vendor",
+                    "### PHP-PARALLEL-LINT",
+                    "parallel-lint --no-progress --exclude vendor .",
+                    "### PSALM",
+                    "psalm --threads=8"
+                ],
+                "webtrees-tools": [
+                    "### PAHOUT",
+                    "@composer global require wata727/pahout=*",
+                    "### PHAN",
+                    "@composer global require phan/phan=*",
+                    "### PHP-CODE-ANALYZER",
+                    "@composer global require wapmorgan/php-code-analyzer=*",
+                    "### PHP-CODE-FIXER",
+                    "@composer global require wapmorgan/php-code-fixer=*",
+                    "### PHP-PARALLEL-LINT",
+                    "@composer global require jakub-onderka/php-parallel-lint=*",
+                    "### PSALM",
+                    "@composer global require vimeo/psalm=*"
+                ],
 		"webtrees-mo": [
 			"msgfmt --output=language/af.mo language/af.po",
 			"msgfmt --output=language/ar.mo language/ar.po",

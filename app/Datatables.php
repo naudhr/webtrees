@@ -22,126 +22,90 @@ use Fisharebest\Webtrees\Functions\FunctionsEdit;
  *
  * @link https://www.datatables.net
  */
-class Datatables {
-	/**
-	 * Generate the HTML attributes for I18N.
-	 *
-	 * @return string[]
-	 */
-	private static function defaultAttributes() {
-		return [
-			'style' => 'display:none;', // Hide until processed, to prevent FOUC.
-		];
-	}
+class Datatables
+{
+    /**
+     * Generate the HTML attributes for I18N.
+     *
+     * @param int[] $lengths
+     *
+     * @return string[]
+     */
+    public static function languageAttributes(array $lengths = [
+        10,
+        25,
+        100,
+        -1,
+    ])
+    {
+        $length_menu = FunctionsEdit::numericOptions($lengths);
 
-	/**
-	 * Generate the HTML attributes for I18N.
-	 *
-	 * @param int[] $lengths
-	 *
-	 * @return string[]
-	 */
-	public static function languageAttributes(array $lengths = [10, 25, 100, -1]) {
-		$length_menu = FunctionsEdit::numericOptions($lengths);
+        $language = [
+            'paginate'       => [
+                /* I18N: A button label, first page */
+                'first'    => I18N::translate('first'),
+                /* I18N: A button label, last page */
+                'last'     => I18N::translate('last'),
+                /* I18N: A button label, next page */
+                'next'     => I18N::translate('next'),
+                /* I18N: A button label, previous page */
+                'previous' => I18N::translate('previous'),
+            ],
+            'emptyTable'     => I18N::translate('No records to display'),
+            /* I18N: %s are placeholders for numbers */
+            'info'           => I18N::translate('Showing %1$s to %2$s of %3$s', '_START_', '_END_', '_TOTAL_'),
+            'infoEmpty'      => I18N::translate('Showing %1$s to %2$s of %3$s', 0, 0, 0),
+            /* I18N: %s is a number */
+            'infoFiltered'   => I18N::translate('(filtered from %s total entries)', '_MAX_'),
+            /* I18N: %s is a number of records per page */
+            'lengthMenu'     => I18N::translate('Display %s', '_MENU_'),
+            'loadingRecords' => I18N::translate('Loading…'),
+            'processing'     => I18N::translate('Calculating…'),
+            'search'         => I18N::translate('Filter'),
+            'zeroRecords'    => I18N::translate('No records to display'),
+        ];
 
-		$language = [
-			'paginate' => [
-				'first'    => /* I18N: A button label, first page */ I18N::translate('first'),
-				'last'     => /* I18N: A button label, last page */ I18N::translate('last'),
-				'next'     => /* I18N: A button label, next page */ I18N::translate('next'),
-				'previous' => /* I18N: A button label, previous page */ I18N::translate('previous'),
-			],
-			'emptyTable'     => I18N::translate('No records to display'),
-			'info'           => /* I18N: %s are placeholders for numbers */ I18N::translate('Showing %1$s to %2$s of %3$s', '_START_', '_END_', '_TOTAL_'),
-			'infoEmpty'      => I18N::translate('Showing %1$s to %2$s of %3$s', 0, 0, 0),
-			'infoFiltered'   => /* I18N: %s is a number */ I18N::translate('(filtered from %s total entries)', '_MAX_'),
-			'lengthMenu'     => /* I18N: %s is a number of records per page */ I18N::translate('Display %s', '_MENU_'),
-			'loadingRecords' => I18N::translate('Loading…'),
-			'processing'     => I18N::translate('Calculating…'),
-			'search'         => I18N::translate('Filter'),
-			'zeroRecords'    => I18N::translate('No records to display'),
-		];
+        return [
+            'data-language'    => json_encode($language),
+            'data-length-menu' => json_encode([
+                array_keys($length_menu),
+                array_values($length_menu),
+            ]),
+        ];
+    }
 
-		return [
-			'data-language'     => json_encode($language),
-			'data-length-menu' => json_encode([array_keys($length_menu), array_values($length_menu)])
-		];
-	}
+    /**
+     * Generate the HTML attributes for a table of events.
+     *
+     * @return string
+     */
+    public static function eventTableAttributes()
+    {
+        return Html::attributes([
+                'class'           => 'table table-bordered table-sm datatables table-event',
+                'data-columns'    => '[null, null, null, null]',
+                'data-info'       => 'false',
+                'data-paging'     => 'false',
+                'data-searching'  => 'false',
+                'data-state-save' => 'true',
+            ] + self::languageAttributes());
+    }
 
-	/**
-	 * Generate the HTML attributes for a table of events.
-	 *
-	 * @return string
-	 */
-	public static function eventTableAttributes() {
-		return Html::attributes([
-			'class' => 'table table-bordered table-sm datatables table-event',
-			//'data-columns'   => '[{ type: "text" }, { type: "num" }, { type: "num" }, { type: "text" }]',
-			'data-columns'    => '[null, null, null, null]',
-			'data-info'       => 'false',
-			'data-paging'     => 'false',
-			'data-searching'  => 'false',
-			'data-state-save' => 'true',
-		] + self::languageAttributes());
-	}
-
-	/**
-	 * Generate the HTML attributes for a table of given names.
-	 *
-	 * @return string
-	 */
-	public static function givenNameTableAttributes() {
-		return Html::attributes([
-			'class' => 'table table-bordered table-sm datatables table-given-name',
-			//'data-columns'   => '[{ type: "text" }, { type: "num" }]',
-			'data-columns'    => '[null, null]',
-			'data-info'       => 'false',
-			'data-paging'     => 'false',
-			'data-searching'  => 'false',
-			'data-state-save' => 'true',
-			'data-order'      => '[[1, "desc"]]',
-		]);
-	}
-
-	/**
-	 * Generate the HTML attributes for a table of notes.
-	 *
-	 * @return string
-	 */
-	public static function noteTableAttributes() {
-		return Html::attributes([
-				'class' => 'table table-bordered table-sm datatables table-note',
-				//'data-columns'   => '[{ type: "text" }, { type: "text" }, { type: "num" }, { type: "num" }, { type: "num" }, { type: "text" }, { sorting: false }]',
-				'data-columns'    => '[null, null, null, null, null, null]',
-				'data-state-save' => 'true',
-			] + self::defaultAttributes() + self::languageAttributes());
-	}
-
-	/**
-	 * Generate the HTML attributes for a table of repositories.
-	 *
-	 * @return string
-	 */
-	public static function repositoryTableAttributes() {
-		return Html::attributes([
-			'class' => 'table table-bordered table-sm datatables table-repository',
-			//'data-columns'   => '[{ type: "text" }, { type: "num" }, { type: "text" }, { sorting: false }]',
-			'data-columns'    => '[null, null, null]',
-			'data-state-save' => 'true',
-		] + self::languageAttributes());
-	}
-
-	/**
-	 * Generate the HTML attributes for a table of sources.
-	 *
-	 * @return string
-	 */
-	public static function sourceTableAttributes() {
-		return Html::attributes([
-			'class' => 'table table-bordered table-sm datatables table-source',
-			//'data-columns'   => '[{ type: "text" }, { type: "text" }, { type: "num" }, { type: "num" }, { type: "num" }, { type: "num" }, { type: "text" }, { sorting: false }]',
-			'data-columns'    => '[null, null, null, null, null, null, null]',
-			'data-state-save' => 'true',
-		] + self::languageAttributes());
-	}
+    /**
+     * Generate the HTML attributes for a table of given names.
+     *
+     * @return string
+     */
+    public static function givenNameTableAttributes()
+    {
+        return Html::attributes([
+            'class'           => 'table table-bordered table-sm datatables table-given-name',
+            'data-columns'    => '[null, null]',
+            'data-info'       => 'false',
+            'data-paging'     => 'false',
+            'data-searching'  => 'false',
+            'data-state-save' => 'true',
+            'data-order'      => '[[1, "desc"]]',
+        ]);
+    }
 }

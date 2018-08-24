@@ -1,5 +1,3 @@
-<?php use Fisharebest\Webtrees\FontAwesome; ?>
-<?php use Fisharebest\Webtrees\Html; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
 <h1><?= $title ?></h1>
@@ -28,7 +26,7 @@
 				<?= I18N::translate('No upgrade information is available.') ?>
 			<?php elseif (version_compare(WT_VERSION, $latest_version) < 0): ?>
 				<?= I18N::translate('A new version of webtrees is available.') ?>
-				<a href="admin_site_upgrade.php" class="error">
+				<a href="<?= e(route('upgrade')) ?>" class="error">
 					<?= /* I18N: %s is a version number */
 					I18N::translate('Upgrade to webtrees %s.', e($latest_version)) ?>
 				</a>
@@ -41,31 +39,31 @@
 			<div class="col-sm-6">
 				<ul class="fa-ul">
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-preferences')) ?>">
 							<?= I18N::translate('Website preferences') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-mail')) ?>">
 							<?= I18N::translate('Sending email') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-registration')) ?>">
 							<?= I18N::translate('Sign-in and registration') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-languages')) ?>">
 							<?= I18N::translate('Languages') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-analytics')) ?>">
 							<?= I18N::translate('Tracking and analytics') ?>
 						</a>
@@ -75,19 +73,19 @@
 			<div class="col-sm-6">
 				<ul class="fa-ul">
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-logs')) ?>">
 							<?= I18N::translate('Website logs') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-clean-data')) ?>">
 							<?= I18N::translate('Clean up data folder') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-site-information')) ?>">
 							<?= I18N::translate('Server information') ?>
 						</a>
@@ -137,7 +135,9 @@
 							</a>
 						</th>
 						<td>
-							<?= FontAwesome::linkIcon('preferences', I18N::translate('Manage family trees'), ['href' => route('admin-trees', ['ged' => $tree->getName()])]) ?>
+							<a href="<?= e(route('admin-trees', ['ged' => $tree->getName()])) ?>" title="<?= I18N::translate('Preferences') ?>">
+                  <?= view('icons/preferences') ?>
+							</a>
 						</td>
 						<td class="text-right">
 							<?php if ($changes[$tree->getTreeId()]): ?>
@@ -196,7 +196,7 @@
 						</td>
 						<td class="d-none d-lg-table-cell text-right">
 							<?php if ($notes[$tree->getTreeId()]): ?>
-								<a href="notelist.php?ged=<?= $tree->getNameUrl() ?>">
+								<a href="<?= e(route('note-list', ['ged' => $tree->getName()])) ?>">
 									<?= I18N::number($media[$tree->getTreeId()]) ?>
 								</a>
 							<?php else: ?>
@@ -239,20 +239,20 @@
 
 		<ul class="fa-ul">
 			<li>
-				<span class="fa-li"><i class="fas fa-wrench"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-trees', ['ged' => $tree->getName()])) ?>">
 					<?= I18N::translate('Manage family trees') ?>
 				</a>
 			</li>
 			<li>
-				<span class="fa-li"><i class="fas fa-wrench"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('tree-page-default-edit')) ?>">
 					<?= I18N::translate('Set the default blocks for new family trees') ?>
 				</a>
 			</li>
 			<?php if (count($all_trees) > 1): ?>
 				<li>
-					<span class="fa-li"><i class="fas fa-wrench"></i></span>
+					<span class="fa-li"><?= view('icons/preferences') ?></span>
 					<a href="<?= e(route('admin-trees-merge')) ?>">
 						<?= I18N::translate('Merge family trees') ?>
 					</a>
@@ -282,7 +282,7 @@
 					<dd class="col-sm-9">
 						<?php foreach ($list as $n => $user): ?>
 							<?= $n ? I18N::$list_separator : '' ?>
-							<a href="admin_users.php?action=edit&user_id=<?= $user->getUserId() ?>" dir="auto">
+							<a href="<?= e(route('admin-users-edit', ['user_id' => $user->getUserId()])) ?>" dir="auto">
 								<?= e($user->getRealName()) ?>
 							</a>
 						<?php endforeach ?>
@@ -295,25 +295,25 @@
 			<div class="col-sm-6">
 				<ul class="fa-ul">
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-users', ['ged' => $tree->getName()])) ?>">
 							<?= I18N::translate('User administration') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-users-create', ['ged' => $tree->getName()])) ?>">
 							<?= I18N::translate('Add a user') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('admin-users-cleanup')) ?>">
 							<?= I18N::translate('Delete inactive users') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-wrench"></i></span>
+						<span class="fa-li"><?= view('icons/preferences') ?></span>
 						<a href="<?= e(route('user-page-default-edit')) ?>">
 							<?= I18N::translate('Set the default blocks for new users') ?>
 						</a>
@@ -323,19 +323,19 @@
 			<div class="col-sm-6">
 				<ul class="fa-ul">
 					<li>
-						<span class="fa-li"><i class="fas fa-envelope"></i></span>
+						<span class="fa-li"><?= view('icons/email') ?></span>
 						<a href="<?= e(route('broadcast', ['to' => 'all'])) ?>">
 							<?= I18N::translate('Send a message to all users') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-envelope"></i></span>
+						<span class="fa-li"><?= view('icons/email') ?></span>
 						<a href="<?= e(route('broadcast', ['to' => 'never_logged'])) ?>">
 							<?= I18N::translate('Send a message to users who have never signed in') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-envelope"></i></span>
+						<span class="fa-li"><?= view('icons/email') ?></span>
 						<a href="<?= e(route('broadcast', ['to' => 'last_6mo'])) ?>">
 							<?= I18N::translate('Send a message to users who have not signed in for 6 months') ?>
 						</a>
@@ -361,37 +361,37 @@
 			<div class="col-sm-6">
 				<ul class="fa-ul">
 					<li>
-						<span class="fa-li"><i class="fas fa-bars"></i></span>
+						<span class="fa-li"><?= view('icons/menu') ?></span>
 						<a href="<?= e(route('admin-menus')) ?>">
 							<?= I18N::translate('Menus') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="far fa-folder"></i></span>
+						<span class="fa-li"><?= view('icons/tab') ?></span>
 						<a href="<?= e(route('admin-tabs')) ?>">
 							<?= I18N::translate('Tabs') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-th-list fa-flip-horizontal"></i></span>
+						<span class="fa-li"><?= view('icons/block') ?></span>
 						<a href="<?= e(route('admin-blocks')) ?>">
 							<?= I18N::translate('Blocks') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-pause"></i></span>
+						<span class="fa-li"><?= view('icons/sidebar') ?></span>
 						<a href="<?= e(route('admin-sidebars')) ?>">
 							<?= I18N::translate('Sidebars') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="fas fa-sitemap"></i></span>
+						<span class="fa-li"><?= view('icons/chart') ?></span>
 						<a href="<?= e(route('admin-charts')) ?>">
 							<?= I18N::translate('Charts') ?>
 						</a>
 					</li>
 					<li>
-						<span class="fa-li"><i class="far fa-file"></i></span>
+						<span class="fa-li"><?= view('icons/report') ?></span>
 						<a href="<?= e(route('admin-reports')) ?>">
 							<?= I18N::translate('Reports') ?>
 						</a>
@@ -402,7 +402,7 @@
 				<ul class="fa-ul">
 					<?php foreach ($config_modules as $module): ?>
 						<li>
-							<span class="fa-li"><i class="fas fa-cogs"></i></span>
+							<span class="fa-li"><?= view('icons/preferences') ?></span>
 							<a href="<?= e($module->getConfigLink()) ?>">
 								<?= $module->getTitle() ?>
 							</a>
@@ -414,7 +414,7 @@
 
 		<ul class="fa-ul">
 			<li>
-				<span class="fa-li"><i class="fas fa-cogs"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-modules')) ?>">
 					<?= I18N::translate('Module administration') ?>
 				</a>
@@ -433,30 +433,63 @@
 	<div class="card-body">
 		<ul class="fa-ul">
 			<li>
-				<span class="fa-li"><i class="fas fa-cogs"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-media')) ?>">
 					<?= I18N::translate('Manage media') ?>
 				</a>
 			</li>
 			<li>
-				<span class="fa-li"><i class="fas fa-cogs"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-media-upload')) ?>">
 					<?= I18N::translate('Upload media files') ?>
 				</a>
 			</li>
 			<li>
-				<span class="fa-li"><i class="fas fa-cogs"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-fix-level-0-media')) ?>">
 					<?= I18N::translate('Link media objects to facts and events') ?>
 				</a>
 			</li>
 			<li>
-				<span class="fa-li"><i class="fas fa-cogs"></i></span>
+				<span class="fa-li"><?= view('icons/preferences') ?></span>
 				<a href="<?= e(route('admin-webtrees1-thumbs')) ?>">
 					<?= I18N::translate('Import custom thumbnails from webtrees version 1') ?>
 				</a>
 			</li>
 		</ul>
+	</div>
+</div>
+
+<!-- MAPS -->
+<div class="card mb-4">
+	<div class="card-header">
+		<h2 class="mb-0">
+			<?= I18N::translate('Map') ?>
+		</h2>
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<div class="col-sm-6">
+				<ul class="fa-ul">
+					<li>
+						<span class="fa-li"><?= view('icons/location') ?></span>
+						<a href="<?= e(route('map-data')) ?>">
+							<?= I18N::translate('Geographic data') ?>
+						</a>
+					</li>
+				</ul>
+			</div>
+			<div class="col-sm-6">
+				<ul class="fa-ul">
+					<li>
+						<span class="fa-li"><?= view('icons/map') ?></span>
+						<a href="<?= e(route('map-provider')) ?>">
+							<?= I18N::translate('Map provider') ?>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 </div>
 

@@ -1,11 +1,10 @@
-<?php use Fisharebest\Webtrees\Functions\FunctionsEdit; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
 <h2 class="wt-page-title">
 	<?= $title ?>
 </h2>
 
-<form class="wt-page-options wt-page-options-search hidden-print mb-4" name="searchform" onsubmit="return checknames(this);">
+<form class="wt-page-options wt-page-options-search hidden-print mb-4" name="searchform"">
 	<input type="hidden" name="route" value="search-general">
 	<input type="hidden" name="ged" value="<?= e($tree->getName()) ?>">
 	<div class="row form-group">
@@ -15,11 +14,7 @@
 		<div class="col-sm-9 wt-page-options-value">
 			<div class="input-group input-group-sm">
 				<input id="query" class="form-control form-control-sm" type="text" name="query" value="<?= e($query) ?>" required>
-				<div class="input-group-append">
-						<span class="input-group-text">
-							<?= FunctionsEdit::inputAddonKeyboard('query') ?>
-						</span>
-				</div>
+				<?= view('edit/input-addon-keyboard', ['id' => 'query']) ?>
 			</div>
 		</div>
 	</div>

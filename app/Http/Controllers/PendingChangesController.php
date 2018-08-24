@@ -38,295 +38,290 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Show, accept and reject pending changes.
  */
-class PendingChangesController extends AbstractBaseController {
-	/**
-	 * Accept all changes to a tree.
-	 *
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function acceptAllChanges(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+class PendingChangesController extends AbstractBaseController
+{
+    /**
+     * Accept all changes to a tree.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function acceptAllChanges(Request $request, Tree $tree): RedirectResponse
+    {
+        $url = $request->get('url', '');
 
-		$url = $request->get('url', '');
+        $changes = Database::prepare(
+            "SELECT change_id, xref, gedcom_id, old_gedcom, new_gedcom" .
+            " FROM `##change` c" .
+            " JOIN `##gedcom` g USING (gedcom_id)" .
+            " WHERE c.status = 'pending' AND gedcom_id = :tree_id" .
+            " ORDER BY change_id"
+        )->execute([
+            'tree_id' => $tree->getTreeId(),
+        ])->fetchAll();
 
-		$changes = Database::prepare(
-			"SELECT change_id, xref, old_gedcom, new_gedcom" .
-			" FROM `##change` c" .
-			" JOIN `##gedcom` g USING (gedcom_id)" .
-			" WHERE c.status = 'pending' AND gedcom_id = :tree_id" .
-			" ORDER BY change_id"
-		)->execute([
-			'tree_id' => $tree->getTreeId(),
-		])->fetchAll();
+        foreach ($changes as $change) {
+            if (empty($change->new_gedcom)) {
+                // delete
+                FunctionsImport::updateRecord($change->old_gedcom, $tree, true);
+            } else {
+                // add/update
+                FunctionsImport::updateRecord($change->new_gedcom, $tree, false);
+            }
 
-		foreach ($changes as $change) {
-			if (empty($change->new_gedcom)) {
-				// delete
-				FunctionsImport::updateRecord($change->old_gedcom, $change->gedcom_id, true);
-			} else {
-				// add/update
-				FunctionsImport::updateRecord($change->new_gedcom, $change->gedcom_id, false);
-			}
+            Database::prepare(
+                "UPDATE `##change` SET status = 'accepted' WHERE change_id = :change_id"
+            )->execute([
+                'change_id' => $change->change_id,
+            ]);
 
-			Database::prepare(
-				"UPDATE `##change` SET status = 'accepted' WHERE change_id = :change_id"
-			)->execute([
-				'change_id' => $change->change_id,
-			]);
+            Log::addEditLog('Accepted change ' . $change->change_id . ' for ' . $change->xref . ' / ' . $tree->getName(), $tree);
+        }
 
-			Log::addEditLog('Accepted change ' . $change->change_id . ' for ' . $change->xref . ' / ' . $tree->getName());
-		}
+        return new RedirectResponse(route('show-pending', [
+            'ged' => $tree->getName(),
+            'url' => $url,
+        ]));
+    }
 
-		return new RedirectResponse(route('show-pending', [
-			'ged' => $tree->getName(),
-			'url' => $url,
-		]));
-	}
+    /**
+     * Accept a change (and all previous changes) to a single record.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function acceptChange(Request $request, Tree $tree): RedirectResponse
+    {
+        $url       = $request->get('url', '');
+        $xref      = $request->get('xref', '');
+        $change_id = (int)$request->get('change_id');
 
-	/**
-	 * Accept a change (and all previous changes) to a single record.
-	 *
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function acceptChange(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $changes = Database::prepare(
+            "SELECT change_id, xref, old_gedcom, new_gedcom" .
+            " FROM  `##change` c" .
+            " JOIN  `##gedcom` g USING (gedcom_id)" .
+            " WHERE c.status   = 'pending'" .
+            " AND   gedcom_id  = :tree_id" .
+            " AND   xref       = :xref" .
+            " AND   change_id <= :change_id" .
+            " ORDER BY change_id"
+        )->execute([
+            'tree_id'   => $tree->getTreeId(),
+            'xref'      => $xref,
+            'change_id' => $change_id,
+        ])->fetchAll();
 
-		$url       = $request->get('url', '');
-		$xref      = $request->get('xref', '');
-		$change_id = (int) $request->get('change_id');
+        foreach ($changes as $change) {
+            if (empty($change->new_gedcom)) {
+                // delete
+                FunctionsImport::updateRecord($change->old_gedcom, $tree, true);
+            } else {
+                // add/update
+                FunctionsImport::updateRecord($change->new_gedcom, $tree, false);
+            }
+            Database::prepare(
+                "UPDATE `##change` SET status = 'accepted' WHERE change_id = :change_id"
+            )->execute([
+                'change_id' => $change->change_id,
+            ]);
 
-		$changes = Database::prepare(
-			"SELECT change_id, xref, old_gedcom, new_gedcom" .
-			" FROM  `##change` c" .
-			" JOIN  `##gedcom` g USING (gedcom_id)" .
-			" WHERE c.status   = 'pending'" .
-			" AND   gedcom_id  = :tree_id" .
-			" AND   xref       = :xref" .
-			" AND   change_id <= :change_id" .
-			" ORDER BY change_id"
-		)->execute([
-			'tree_id'   => $tree->getTreeId(),
-			'xref'      => $xref,
-			'change_id' => $change_id,
-		])->fetchAll();
+            Log::addEditLog('Accepted change ' . $change->change_id . ' for ' . $change->xref . ' / ' . $tree->getName(), $tree);
+        }
 
-		foreach ($changes as $change) {
-			if (empty($change->new_gedcom)) {
-				// delete
-				FunctionsImport::updateRecord($change->old_gedcom, $tree->getTreeId(), true);
-			} else {
-				// add/update
-				FunctionsImport::updateRecord($change->new_gedcom, $tree->getTreeId(), false);
-			}
-			Database::prepare(
-				"UPDATE `##change` SET status = 'accepted' WHERE change_id = :change_id"
-			)->execute([
-				'change_id' => $change->change_id,
-			]);
+        return new RedirectResponse(route('show-pending', [
+            'ged' => $tree->getName(),
+            'url' => $url,
+        ]));
+    }
 
-			Log::addEditLog('Accepted change ' . $change->change_id . ' for ' . $change->xref . ' / ' . $tree->getName());
-		}
+    /**
+     * Accept all changes to a single record.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function acceptChanges(Request $request, Tree $tree): Response
+    {
+        $xref = $request->get('xref', '');
 
-		return new RedirectResponse(route('show-pending', [
-			'ged' => $tree->getName(),
-			'url' => $url,
-		]));
-	}
+        $record = GedcomRecord::getInstance($xref, $tree);
 
-	/**
-	 * Accept all changes to a single record.
-	 *
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function acceptChanges(Request $request): Response {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $this->checkRecordAccess($record, false);
 
-		$xref = $request->get('xref', '');
+        if ($record && Auth::isModerator($tree)) {
+            if ($record->isPendingDeletion()) {
+                /* I18N: %s is the name of a genealogy record */
+                FlashMessages::addMessage(I18N::translate('“%s” has been deleted.', $record->getFullName()));
+            } else {
+                /* I18N: %s is the name of a genealogy record */
+                FlashMessages::addMessage(I18N::translate('The changes to “%s” have been accepted.', $record->getFullName()));
+            }
+            FunctionsImport::acceptAllChanges($record->getXref(), $record->getTree());
+        }
 
-		$record = GedcomRecord::getInstance($xref, $tree);
+        return new Response();
+    }
 
-		$this->checkRecordAccess($record, false);
+    /**
+     * Reject all changes to a tree.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function rejectAllChanges(Request $request, Tree $tree): RedirectResponse
+    {
+        $url = $request->get('url', '');
 
-		if ($record && Auth::isModerator($tree)) {
-			if ($record->isPendingDeletion()) {
-				FlashMessages::addMessage(/* I18N: %s is the name of a genealogy record */
-					I18N::translate('“%s” has been deleted.', $record->getFullName()));
-			} else {
-				FlashMessages::addMessage(/* I18N: %s is the name of a genealogy record */
-					I18N::translate('The changes to “%s” have been accepted.', $record->getFullName()));
-			}
-			FunctionsImport::acceptAllChanges($record->getXref(), $record->getTree()->getTreeId());
-		}
+        Database::prepare(
+            "UPDATE `##change` SET status = 'rejected' WHERE status = 'pending' AND gedcom_id = :tree_id"
+        )->execute([
+            'tree_id' => $tree->getTreeId(),
+        ]);
 
-		return new Response;
-	}
+        return new RedirectResponse(route('show-pending', [
+            'ged' => $tree->getName(),
+            'url' => $url,
+        ]));
+    }
 
-	/**
-	 * Reject all changes to a tree.
-	 *
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function rejectAllChanges(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+    /**
+     * Reject a change (and all subsequent changes) to a single record.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function rejectChange(Request $request, Tree $tree): RedirectResponse
+    {
+        $url       = $request->get('url', '');
+        $xref      = $request->get('xref', '');
+        $change_id = (int)$request->get('change_id');
 
-		$url = $request->get('url', '');
+        // Reject a change, and subsequent changes to the same record
+        Database::prepare(
+            "UPDATE `##change`" .
+            " SET   status     = 'rejected'" .
+            " WHERE status     = 'pending'" .
+            " AND   gedcom_id  = :tree_id" .
+            " AND   xref       = :xref" .
+            " AND   change_id >= :change_id"
+        )->execute([
+            'tree_id'   => $tree->getTreeid(),
+            'xref'      => $xref,
+            'change_id' => $change_id,
+        ]);
 
-		Database::prepare(
-			"UPDATE `##change` SET status = 'rejected' WHERE status = 'pending' AND gedcom_id = :tree_id"
-		)->execute([
-			'tree_id' => $tree->getTreeId(),
-		]);
+        return new RedirectResponse(route('show-pending', [
+            'ged' => $tree->getName(),
+            'url' => $url,
+        ]));
+    }
 
-		return new RedirectResponse(route('show-pending', [
-			'ged' => $tree->getName(),
-			'url' => $url,
-		]));
-	}
+    /**
+     * Accept all changes to a single record.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function rejectChanges(Request $request, Tree $tree): Response
+    {
+        $xref = $request->get('xref', '');
 
-	/**
-	 * Reject a change (and all subsequent changes) to a single record.
-	 *
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function rejectChange(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $record = GedcomRecord::getInstance($xref, $tree);
 
-		$url       = $request->get('url', '');
-		$xref      = $request->get('xref', '');
-		$change_id = (int) $request->get('change_id');
+        $this->checkRecordAccess($record, false);
 
-		// Reject a change, and subsequent changes to the same record
-		Database::prepare(
-			"UPDATE `##change`" .
-			" SET   status     = 'rejected'" .
-			" WHERE status     = 'pending'" .
-			" AND   gedcom_id  = :tree_id" .
-			" AND   xref       = :xref" .
-			" AND   change_id >= :change_id"
-		)->execute([
-			'tree_id'   => $tree->getTreeid(),
-			'xref'      => $xref,
-			'change_id' => $change_id,
-		]);
+        if ($record && Auth::isModerator($tree)) {
+            /* I18N: %s is the name of an individual, source or other record */
+            FlashMessages::addMessage(I18N::translate('The changes to “%s” have been rejected.', $record->getFullName()));
+            FunctionsImport::rejectAllChanges($record);
+        }
 
-		return new RedirectResponse(route('show-pending', [
-			'ged' => $tree->getName(),
-			'url' => $url,
-		]));
-	}
+        return new Response();
+    }
 
-	/**
-	 * Accept all changes to a single record.
-	 *
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function rejectChanges(Request $request): Response {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+    /**
+     * Show the pending changes for the current tree.
+     *
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function showChanges(Request $request, Tree $tree): Response
+    {
+        $url = $request->get('url', route('tree-page', ['ged' => $tree->getName()]));
 
-		$xref = $request->get('xref', '');
+        $rows = Database::prepare(
+            "SELECT c.*, UNIX_TIMESTAMP(c.change_time) + :offset AS change_timestamp, u.user_name, u.real_name, g.gedcom_name, new_gedcom, old_gedcom" .
+            " FROM `##change` c" .
+            " JOIN `##user`   u USING (user_id)" .
+            " JOIN `##gedcom` g USING (gedcom_id)" .
+            " WHERE c.status='pending'" .
+            " ORDER BY gedcom_id, c.xref, c.change_id"
+        )->execute([
+            'offset' => WT_TIMESTAMP_OFFSET,
+        ])->fetchAll();
 
-		$record = GedcomRecord::getInstance($xref, $tree);
+        $changes = [];
+        foreach ($rows as $row) {
+            $change_tree = Tree::findById($row->gedcom_id);
 
-		$this->checkRecordAccess($record, false);
+            preg_match('/^0 (?:@' . WT_REGEX_XREF . '@ )?(' . WT_REGEX_TAG . ')/', $row->old_gedcom . $row->new_gedcom, $match);
 
-		if ($record && Auth::isModerator($tree)) {
-			FlashMessages::addMessage(/* I18N: %s is the name of an individual, source or other record */ I18N::translate('The changes to “%s” have been rejected.', $record->getFullName()));
-			FunctionsImport::rejectAllChanges($record);
-		}
+            switch ($match[1]) {
+                case 'INDI':
+                    $row->record = new Individual($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                case 'FAM':
+                    $row->record = new Family($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                case 'SOUR':
+                    $row->record = new Source($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                case 'REPO':
+                    $row->record = new Repository($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                case 'OBJE':
+                    $row->record = new Media($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                case 'NOTE':
+                    $row->record = new Note($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+                default:
+                    $row->record = new GedcomRecord($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
+                    break;
+            }
 
-		return new Response;
-	}
+            $changes[$row->gedcom_id][$row->xref][] = $row;
+        }
 
-	/**
-	 * Show the pending changes for the current tree.
-	 *
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function showChanges(Request $request): Response {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $title = I18N::translate('Pending changes');
 
-		$url = $request->get('url', route('tree-page', ['ged' => $tree->getName()]));
+        // If the current tree has changes, activate that tab.  Otherwise activate the first tab.
+        if (empty($changes[$tree->getTreeId()])) {
+            reset($changes);
+            $active_tree_id = key($changes);
+        } else {
+            $active_tree_id = $tree->getTreeId();
+        }
 
-		$rows = Database::prepare(
-			"SELECT c.*, UNIX_TIMESTAMP(c.change_time) + :offset AS change_timestamp, u.user_name, u.real_name, g.gedcom_name, new_gedcom, old_gedcom" .
-			" FROM `##change` c" .
-			" JOIN `##user`   u USING (user_id)" .
-			" JOIN `##gedcom` g USING (gedcom_id)" .
-			" WHERE c.status='pending'" .
-			" ORDER BY gedcom_id, c.xref, c.change_id"
-		)->execute([
-			'offset' => WT_TIMESTAMP_OFFSET,
-		])->fetchAll();
-
-		$changes = [];
-		foreach ($rows as $row) {
-			$change_tree = Tree::findById($row->gedcom_id);
-
-			preg_match('/^0 (?:@' . WT_REGEX_XREF . '@ )?(' . WT_REGEX_TAG . ')/', $row->old_gedcom . $row->new_gedcom, $match);
-
-			switch ($match[1]) {
-				case 'INDI':
-					$row->record = new Individual($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				case 'FAM':
-					$row->record = new Family($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				case 'SOUR':
-					$row->record = new Source($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				case 'REPO':
-					$row->record = new Repository($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				case 'OBJE':
-					$row->record = new Media($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				case 'NOTE':
-					$row->record = new Note($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-				default:
-					$row->record = new GedcomRecord($row->xref, $row->old_gedcom, $row->new_gedcom, $change_tree);
-					break;
-			}
-
-			$changes[$row->gedcom_id][$row->xref][] = $row;
-		}
-
-		$title = I18N::translate('Pending changes');
-
-		// If the current tree has changes, activate that tab.  Otherwise activate the first tab.
-		if (empty($changes[$tree->getTreeId()])) {
-			reset($changes);
-			$active_tree_id = key($changes);
-		} else {
-			$active_tree_id = $tree->getTreeId();
-		}
-
-		return $this->viewResponse('pending-changes-page', [
-			'active_tree_id' => $active_tree_id,
-			'changes'        => $changes,
-			'title'          => $title,
-			'url'            => $url,
-		]);
-	}
+        return $this->viewResponse('pending-changes-page', [
+            'active_tree_id' => $active_tree_id,
+            'changes'        => $changes,
+            'title'          => $title,
+            'url'            => $url,
+        ]);
+    }
 }

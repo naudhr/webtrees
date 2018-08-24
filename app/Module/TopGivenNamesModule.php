@@ -19,131 +19,168 @@ use Fisharebest\Webtrees\Auth;
 use Fisharebest\Webtrees\Filter;
 use Fisharebest\Webtrees\I18N;
 use Fisharebest\Webtrees\Stats;
+use Fisharebest\Webtrees\Tree;
 
 /**
  * Class TopGivenNamesModule
  */
-class TopGivenNamesModule extends AbstractModule implements ModuleBlockInterface {
-	/** {@inheritdoc} */
-	public function getTitle() {
-		return /* I18N: Name of a module. Top=Most common */ I18N::translate('Top given names');
-	}
+class TopGivenNamesModule extends AbstractModule implements ModuleBlockInterface
+{
+    /** {@inheritdoc} */
+    public function getTitle()
+    {
+        /* I18N: Name of a module. Top=Most common */
+        return I18N::translate('Top given names');
+    }
 
-	/** {@inheritdoc} */
-	public function getDescription() {
-		return /* I18N: Description of the “Top given names” module */ I18N::translate('A list of the most popular given names.');
-	}
+    /** {@inheritdoc} */
+    public function getDescription()
+    {
+        /* I18N: Description of the “Top given names” module */
+        return I18N::translate('A list of the most popular given names.');
+    }
 
-	/**
-	 * Generate the HTML content of this block.
-	 *
-	 * @param int      $block_id
-	 * @param bool     $template
-	 * @param string[] $cfg
-	 *
-	 * @return string
-	 */
-	public function getBlock($block_id, $template = true, $cfg = []): string {
-		global $ctype, $WT_TREE;
+    /**
+     * Generate the HTML content of this block.
+     *
+     * @param Tree     $tree
+     * @param int      $block_id
+     * @param bool     $template
+     * @param string[] $cfg
+     *
+     * @return string
+     */
+    public function getBlock(Tree $tree, int $block_id, bool $template = true, array $cfg = []): string
+    {
+        global $ctype;
 
-		$num       = $this->getBlockSetting($block_id, 'num', '10');
-		$infoStyle = $this->getBlockSetting($block_id, 'infoStyle', 'table');
+        $num       = $this->getBlockSetting($block_id, 'num', '10');
+        $infoStyle = $this->getBlockSetting($block_id, 'infoStyle', 'table');
 
-		extract($cfg, EXTR_OVERWRITE);
+        extract($cfg, EXTR_OVERWRITE);
 
-		$stats = new Stats($WT_TREE);
+        $stats = new Stats($tree);
 
-		switch ($infoStyle) {
-			case 'list':
-				$males   = $stats->commonGivenMaleTotals([1, $num, 'rcount']);
-				$females = $stats->commonGivenFemaleTotals([1, $num, 'rcount']);
-				$content = view('blocks/top-given-names-list', [
-					'males'   => $males,
-					'females' => $females,
-				]);
-				break;
-			default:
-			case 'table':
-				$males   = $stats->commonGivenMaleTable([1, $num, 'rcount']);
-				$females = $stats->commonGivenFemaleTable([1, $num, 'rcount']);
-				$content = view('blocks/top-given-names-table', [
-					'males'   => $males,
-					'females' => $females,
-				]);
-				break;
-		}
+        switch ($infoStyle) {
+            case 'list':
+                $males   = $stats->commonGivenMaleTotals([
+                    1,
+                    $num,
+                    'rcount',
+                ]);
+                $females = $stats->commonGivenFemaleTotals([
+                    1,
+                    $num,
+                    'rcount',
+                ]);
+                $content = view('modules/top10_givnnames/list', [
+                    'males'   => $males,
+                    'females' => $females,
+                ]);
+                break;
+            default:
+            case 'table':
+                $males   = $stats->commonGivenMaleTable([
+                    1,
+                    $num,
+                    'rcount',
+                ]);
+                $females = $stats->commonGivenFemaleTable([
+                    1,
+                    $num,
+                    'rcount',
+                ]);
+                $content = view('modules/top10_givnnames/table', [
+                    'males'   => $males,
+                    'females' => $females,
+                ]);
+                break;
+        }
 
-		if ($template) {
-			if ($num == 1) {
-				// I18N: i.e. most popular given name.
-				$title = I18N::translate('Top given name');
-			} else {
-				// I18N: Title for a list of the most common given names, %s is a number. Note that a separate translation exists when %s is 1
-				$title = I18N::plural('Top %s given name', 'Top %s given names', $num, I18N::number($num));
-			}
+        if ($template) {
+            if ($num == 1) {
+                // I18N: i.e. most popular given name.
+                $title = I18N::translate('Top given name');
+            } else {
+                // I18N: Title for a list of the most common given names, %s is a number. Note that a separate translation exists when %s is 1
+                $title = I18N::plural('Top %s given name', 'Top %s given names', $num, I18N::number($num));
+            }
 
-			if ($ctype === 'gedcom' && Auth::isManager($WT_TREE)) {
-				$config_url = route('tree-page-block-edit', ['block_id' => $block_id, 'ged' => $WT_TREE->getName()]);
-			} elseif ($ctype === 'user' && Auth::check()) {
-				$config_url = route('user-page-block-edit', ['block_id' => $block_id, 'ged' => $WT_TREE->getName()]);
-			} else {
-				$config_url = '';
-			}
+            if ($ctype === 'gedcom' && Auth::isManager($tree)) {
+                $config_url = route('tree-page-block-edit', [
+                    'block_id' => $block_id,
+                    'ged'      => $tree->getName(),
+                ]);
+            } elseif ($ctype === 'user' && Auth::check()) {
+                $config_url = route('user-page-block-edit', [
+                    'block_id' => $block_id,
+                    'ged'      => $tree->getName(),
+                ]);
+            } else {
+                $config_url = '';
+            }
 
-			return view('blocks/template', [
-				'block'      => str_replace('_', '-', $this->getName()),
-				'id'         => $block_id,
-				'config_url' => $config_url,
-				'title'      => $title,
-				'content'    => $content,
-			]);
-		} else {
-			return $content;
-		}
-	}
+            return view('modules/block-template', [
+                'block'      => str_replace('_', '-', $this->getName()),
+                'id'         => $block_id,
+                'config_url' => $config_url,
+                'title'      => $title,
+                'content'    => $content,
+            ]);
+        } else {
+            return $content;
+        }
+    }
 
-	/** {@inheritdoc} */
-	public function loadAjax(): bool {
-		return false;
-	}
+    /** {@inheritdoc} */
+    public function loadAjax(): bool
+    {
+        return false;
+    }
 
-	/** {@inheritdoc} */
-	public function isUserBlock(): bool {
-		return true;
-	}
+    /** {@inheritdoc} */
+    public function isUserBlock(): bool
+    {
+        return true;
+    }
 
-	/** {@inheritdoc} */
-	public function isGedcomBlock(): bool {
-		return true;
-	}
+    /** {@inheritdoc} */
+    public function isGedcomBlock(): bool
+    {
+        return true;
+    }
 
-	/**
-	 * An HTML form to edit block settings
-	 *
-	 * @param int $block_id
-	 *
-	 * @return void
-	 */
-	public function configureBlock($block_id) {
-		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-			$this->setBlockSetting($block_id, 'num', Filter::postInteger('num', 1, 10000, 10));
-			$this->setBlockSetting($block_id, 'infoStyle', Filter::post('infoStyle', 'list|table', 'table'));
+    /**
+     * An HTML form to edit block settings
+     *
+     * @param Tree $tree
+     * @param int  $block_id
+     *
+     * @return void
+     */
+    public function configureBlock(Tree $tree, int $block_id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->setBlockSetting($block_id, 'num', Filter::postInteger('num', 1, 10000, 10));
+            $this->setBlockSetting($block_id, 'infoStyle', Filter::post('infoStyle', 'list|table', 'table'));
 
-			return;
-		}
+            return;
+        }
 
-		$num       = $this->getBlockSetting($block_id, 'num', '10');
-		$infoStyle = $this->getBlockSetting($block_id, 'infoStyle', 'table');
+        $num       = $this->getBlockSetting($block_id, 'num', '10');
+        $infoStyle = $this->getBlockSetting($block_id, 'infoStyle', 'table');
 
-		$info_styles = [
-			'list'  => /* I18N: An option in a list-box */ I18N::translate('list'),
-			'table' => /* I18N: An option in a list-box */ I18N::translate('table'),
-		];
+        $info_styles = [
+            /* I18N: An option in a list-box */
+            'list'  => I18N::translate('list'),
+            /* I18N: An option in a list-box */
+            'table' => I18N::translate('table'),
+        ];
 
-		echo view('blocks/top-given-names-config', [
-			'infoStyle'   => $infoStyle,
-			'info_styles' => $info_styles,
-			'num'         => $num,
-		]);
-	}
+        echo view('modules/top10_givnnames/config', [
+            'infoStyle'   => $infoStyle,
+            'info_styles' => $info_styles,
+            'num'         => $num,
+        ]);
+    }
 }

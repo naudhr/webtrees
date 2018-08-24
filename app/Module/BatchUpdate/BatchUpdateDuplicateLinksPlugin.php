@@ -15,71 +15,85 @@
  */
 namespace Fisharebest\Webtrees\Module\BatchUpdate;
 
+use Fisharebest\Webtrees\GedcomRecord;
 use Fisharebest\Webtrees\I18N;
 
 /**
  * Class BatchUpdateDuplicateLinksPlugin Batch Update plugin: remove duplicate links in records
  */
-class BatchUpdateDuplicateLinksPlugin extends BatchUpdateBasePlugin {
-	/**
-	 * User-friendly name for this plugin.
-	 *
-	 * @return string
-	 */
-	public function getName() {
-		return I18N::translate('Remove duplicate links');
-	}
+class BatchUpdateDuplicateLinksPlugin extends BatchUpdateBasePlugin
+{
+    /**
+     * User-friendly name for this plugin.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return I18N::translate('Remove duplicate links');
+    }
 
-	/**
-	 * Description / help-text for this plugin.
-	 *
-	 * @return string
-	 */
-	public function getDescription() {
-		return I18N::translate('A common error is to have multiple links to the same record, for example listing the same child more than once in a family record.');
-	}
+    /**
+     * Description / help-text for this plugin.
+     *
+     * @return string
+     */
+    public function getDescription()
+    {
+        return I18N::translate('A common error is to have multiple links to the same record, for example listing the same child more than once in a family record.');
+    }
 
-	/**
-	 * This plugin will update all types of record.
-	 *
-	 * @return string[]
-	 */
-	public function getRecordTypesToUpdate() {
-		return ['INDI', 'FAM', 'SOUR', 'REPO', 'NOTE', 'OBJE'];
-	}
+    /**
+     * This plugin will update all types of record.
+     *
+     * @return string[]
+     */
+    public function getRecordTypesToUpdate()
+    {
+        return [
+            'INDI',
+            'FAM',
+            'SOUR',
+            'REPO',
+            'NOTE',
+            'OBJE',
+        ];
+    }
 
-	/**
-	 * Does this record need updating?
-	 *
-	 * @param string $xref
-	 * @param string $gedrec
-	 *
-	 * @return bool
-	 */
-	public function doesRecordNeedUpdate($xref, $gedrec) {
-		return
-			preg_match('/(\n1.*@.+@.*(?:(?:\n[2-9].*)*))(?:\n1.*(?:\n[2-9].*)*)*\1/', $gedrec) ||
-			preg_match('/(\n2.*@.+@.*(?:(?:\n[3-9].*)*))(?:\n2.*(?:\n[3-9].*)*)*\1/', $gedrec) ||
-			preg_match('/(\n3.*@.+@.*(?:(?:\n[4-9].*)*))(?:\n3.*(?:\n[4-9].*)*)*\1/', $gedrec);
-	}
+    /**
+     * Does this record need updating?
+     *
+     * @param GedcomRecord $record
+     *
+     * @return bool
+     */
+    public function doesRecordNeedUpdate(GedcomRecord $record): bool
+    {
+        $gedcom = $record->getGedcom();
 
-	/**
-	 * Apply any updates to this record
-	 *
-	 * @param string $xref
-	 * @param string $gedrec
-	 *
-	 * @return string
-	 */
-	public function updateRecord($xref, $gedrec) {
-		return preg_replace(
-			[
-				'/(\n1.*@.+@.*(?:(?:\n[2-9].*)*))((?:\n1.*(?:\n[2-9].*)*)*\1)/',
-				'/(\n2.*@.+@.*(?:(?:\n[3-9].*)*))((?:\n2.*(?:\n[3-9].*)*)*\1)/',
-				'/(\n3.*@.+@.*(?:(?:\n[4-9].*)*))((?:\n3.*(?:\n[4-9].*)*)*\1)/',
-			],
-			'$2',
-			$gedrec
-		);
-	}
+        return
+            preg_match('/(\n1.*@.+@.*(?:(?:\n[2-9].*)*))(?:\n1.*(?:\n[2-9].*)*)*\1/', $gedcom) ||
+            preg_match('/(\n2.*@.+@.*(?:(?:\n[3-9].*)*))(?:\n2.*(?:\n[3-9].*)*)*\1/', $gedcom) ||
+            preg_match('/(\n3.*@.+@.*(?:(?:\n[4-9].*)*))(?:\n3.*(?:\n[4-9].*)*)*\1/', $gedcom);
+    }
+
+    /**
+     * Apply any updates to this record
+     *
+     * @param GedcomRecord $record
+     *
+     * @return string
+     */
+    public function updateRecord(GedcomRecord $record): string
+    {
+        $old_gedcom = $record->getGedcom();
+
+        $new_gedcom = preg_replace([
+            '/(\n1.*@.+@.*(?:(?:\n[2-9].*)*))((?:\n1.*(?:\n[2-9].*)*)*\1)/',
+            '/(\n2.*@.+@.*(?:(?:\n[3-9].*)*))((?:\n2.*(?:\n[3-9].*)*)*\1)/',
+            '/(\n3.*@.+@.*(?:(?:\n[4-9].*)*))((?:\n3.*(?:\n[4-9].*)*)*\1)/',
+        ], '$2', $old_gedcom);
+
+        return $new_gedcom;
+    }
 }

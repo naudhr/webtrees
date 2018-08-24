@@ -1,6 +1,6 @@
 <?php use Fisharebest\Webtrees\I18N; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -23,6 +23,7 @@
 
 <form class="form form-horizontal">
 	<input type="hidden" name="route" value="admin-trees-download">
+	<input type="hidden" name="ged" value="<?= e($tree->getName()) ?>">
 
 	<!-- DOWNLOAD OPTIONS -->
 	<fieldset class="form-group">

@@ -1,6 +1,5 @@
 <?php use Fisharebest\Webtrees\Auth; ?>
 <?php use Fisharebest\Webtrees\FontAwesome; ?>
-<?php use Fisharebest\Webtrees\Html; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
 <div class="dropdown wt-page-menu">
@@ -10,13 +9,13 @@
 	</button>
 	<div class="dropdown-menu dropdown-menu-right wt-page-menu-items" aria-labelledby="page-menu">
 		<?php if ($count_sex === 0): ?>
-			<a class="dropdown-item menu-indi-editraw" href="<?= e(Html::url('edit_interface.php', ['action' => 'add', 'fact' => 'SEX', 'ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
+			<a class="dropdown-item menu-indi-editraw" href="<?= e(route('add-fact', ['fact' => 'SEX', 'ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
 				<?= I18N::translate('Edit the gender') ?>
 			</a>
 
 		<?php endif ?>
 
-		<a class="dropdown-item menu-indi-editraw" href="<?= e(Html::url('edit_interface.php', ['action' => 'addname', 'ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
+		<a class="dropdown-item menu-indi-editraw" href="<?= e(route('add-name', ['ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
 			<?= I18N::translate('Add a name') ?>
 		</a>
 
@@ -27,13 +26,13 @@
 		<?php endif ?>
 
 		<?php if (empty($individual->getFacts('SEX'))): ?>
-			<a class="dropdown-item menu-indi-editraw" href="<?= e(Html::url('edit_interface.php', ['action' => 'add', 'fact' => 'SEX', 'ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
+			<a class="dropdown-item menu-indi-editraw" href="<?= e(route('add-fact', ['fact' => 'SEX', 'ged' => $individual->getTree()->getName(), 'xref' => $individual->getXref()])) ?>">
 				<?= I18N::translate('Edit the gender') ?>
 			</a>
 		<?php endif ?>
 
 
-		<a class="dropdown-item menu-indi-del" href="#" onclick="return delete_record('<?= I18N::translate('Are you sure you want to delete “%s”?', strip_tags($individual->getFullName())) ?>', '<?= e($individual->getXref()) ?>', '<?= e($individual->getTree()->getName()) ?>');">
+		<a class="dropdown-item menu-indi-del" href="#" data-confirm="<?= I18N::translate('Are you sure you want to delete “%s”?', strip_tags($individual->getFullName())) ?>" onclick="return confirm(this.dataset.confirm) && delete_record('<?= e($individual->getXref()) ?>', '<?= e($individual->getTree()->getName()) ?>');">
 			<?= I18N::translate('Delete') ?>
 		</a>
 

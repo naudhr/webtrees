@@ -49,9 +49,8 @@ function reject_changes (xref, ged) {
 }
 
 // Delete a record - and reload the page
-function delete_record (message, xref, gedcom) {
-  if (confirm(message)) {
-    $.post('index.php', {
+function delete_record (xref, gedcom) {
+  $.post('index.php', {
       route: 'delete-record',
       xref: xref,
       ged: gedcom,
@@ -59,7 +58,7 @@ function delete_record (message, xref, gedcom) {
     function () {
       location.reload();
     });
-  }
+
   return false;
 }
 
@@ -140,7 +139,7 @@ function addmedia_links (field, iid, iname) {
   return false;
 }
 
-function valid_date (datefield) {
+function valid_date (datefield, dmy) {
   var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   var hijri_months = ['MUHAR', 'SAFAR', 'RABIA', 'RABIT', 'JUMAA', 'JUMAT', 'RAJAB', 'SHAAB', 'RAMAD', 'SHAWW', 'DHUAQ', 'DHUAH'];
   var hebrew_months = ['TSH', 'CSH', 'KSL', 'TVT', 'SHV', 'ADR', 'ADS', 'NSN', 'IYR', 'SVN', 'TMZ', 'AAV', 'ELL'];
@@ -191,12 +190,6 @@ function valid_date (datefield) {
     var f1 = parseInt(RegExp.$2, 10);
     var f2 = parseInt(RegExp.$3, 10);
     var f3 = parseInt(RegExp.$4, 10);
-    var dmy = 'DMY';
-    if (typeof (locale_date_format) !== 'undefined') {
-      if (locale_date_format === 'MDY' || locale_date_format === 'YMD') {
-        dmy = locale_date_format;
-      }
-    }
     var yyyy = new Date().getFullYear();
     var yy = yyyy % 100;
     var cc = yyyy - yy;
@@ -326,22 +319,6 @@ function timeout_submenu (elementid) {
   if (typeof menutimeouts[elementid] !== 'number') {
     menutimeouts[elementid] = setTimeout("hide_submenu('" + elementid + "')", 100);
   }
-}
-
-function statusDisable (sel) {
-  var cbox = document.getElementById(sel);
-  cbox.checked = false;
-  cbox.disabled = true;
-}
-
-function statusEnable (sel) {
-  var cbox = document.getElementById(sel);
-  cbox.disabled = false;
-}
-
-function statusChecked (sel) {
-  var cbox = document.getElementById(sel);
-  cbox.checked = true;
 }
 
 var monthLabels = [];
@@ -613,11 +590,6 @@ function paste_char (value) {
   }
 }
 
-function ilinkitem (mediaid, type, ged) {
-  window.open('inverselink.php?mediaid=' + encodeURIComponent(mediaid) + '&linkto=' + encodeURIComponent(type) + '&ged=' + encodeURIComponent(ged), '_blank', find_window_specs);
-  return false;
-}
-
 /**
  * Persistant checkbox options to hide/show extra data.
 
@@ -842,11 +814,6 @@ $(function () {
     $(this).load($(this).data('ajaxUrl'));
 	});
 
-  // Bootstrap tabs - load content dynamically using AJAX
-  $('a[data-toggle="tab"][data-href]').on('show.bs.tab', function () {
-    $(this.getAttribute('href') + ':empty').load($(this).data('href'));
-  });
-
   // Select2 - format entries in the select list
   function templateOptionForSelect2(data) {
     if (data.loading) {
@@ -863,18 +830,23 @@ $(function () {
 
   // Select2 - activate autocomplete fields
   $('select.select2').select2({
+    width: '90%',
     // Do not escape.
     escapeMarkup: function (x) { return x }
     // Same formatting for both selections and rsult
     //templateResult: templateOptionForSelect2,
     //templateSelection: templateOptionForSelect2
-  });
-
+  })
   // If we clear the select (using the "X" button), we need an empty
   // value (rather than no value at all) for inputs with name="array[]"
-	$('select.select2').on('select2:unselect', function (evt) {
+	.on('select2:unselect', function (evt) {
     $(evt.delegateTarget).append('<option value="" selected="selected"></option>');
-	});
+	})
+  // Select2 adds titles.  Remove them.
+  // https://stackoverflow.com/questions/35500508/how-to-disable-the-title-in-select2
+	.on('change', function (evt) {
+    $('.select2-selection__rendered').removeAttr('title');
+  });
 
   // Datatables - locale aware sorting
   $.fn.dataTableExt.oSort['text-asc'] = function (x, y) {
@@ -885,7 +857,7 @@ $(function () {
   };
 
   // DataTables - start hidden to prevent FOUC.
-  $('table.datatables').each(function () { $(this).DataTable(); $(this).show(); });
+  $('table.datatables').each(function () { $(this).DataTable(); $(this).removeClass('d-none'); });
 
   // Create a new record while editing an existing one.
   // Paste the XREF and description into the Select2 element.

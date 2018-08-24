@@ -128,8 +128,8 @@
 								if ($mediatype) {
 									echo GedcomTag::getLabelValue('TYPE', GedcomTag::getFileFormTypeValue($mediatype));
 								}
-								echo FunctionsPrintFacts::printFactSources($media_object->getGedcom(), 1);
-								echo FunctionsPrint::printFactNotes($media_object->getGedcom(), 1);
+								echo FunctionsPrintFacts::printFactSources($tree, $media_object->getGedcom(), 1);
+								echo FunctionsPrint::printFactNotes($tree, $media_object->getGedcom(), 1);
 								if ($media_file->isExternal()) {
 									echo GedcomTag::getLabelValue('URL', $media_file->filename());
 								} elseif ($media_file->fileExists()) {
@@ -143,10 +143,8 @@
 									echo GedcomTag::getLabelValue('FILE', $media_file->filename());
 								}
 								echo GedcomTag::getLabelValue('FORM', $media_file->mimeType());
-								echo GedcomTag::getLabelValue('__FILE_SIZE__', $media_file->fileSizeKB());
-								$imgsize = $media_file->getImageAttributes();
-								if ($imgsize['WxH']) {
-									echo GedcomTag::getLabelValue('__IMAGE_SIZE__', $imgsize['WxH']);
+								foreach ($media_file->attributes() as $tag => $value) {
+									echo GedcomTag::getLabelValue($tag, $value);
 								}
 								?>
 							</div>

@@ -27,214 +27,222 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 /**
  * Class FamilyTreeNewsModule
  */
-class FamilyTreeNewsModule extends AbstractModule implements ModuleBlockInterface {
-	// How to update the database schema for this module
-	const SCHEMA_TARGET_VERSION   = 3;
-	const SCHEMA_SETTING_NAME     = 'NB_SCHEMA_VERSION';
-	const SCHEMA_MIGRATION_PREFIX = '\Fisharebest\Webtrees\Module\FamilyTreeNews\Schema';
+class FamilyTreeNewsModule extends AbstractModule implements ModuleBlockInterface
+{
+    // How to update the database schema for this module
+    const SCHEMA_TARGET_VERSION   = 3;
+    const SCHEMA_SETTING_NAME     = 'NB_SCHEMA_VERSION';
+    const SCHEMA_MIGRATION_PREFIX = '\Fisharebest\Webtrees\Module\FamilyTreeNews\Schema';
 
-	/**
-	 * Create a new module.
-	 *
-	 * @param string $directory Where is this module installed
-	 */
-	public function __construct($directory) {
-		parent::__construct($directory);
+    /**
+     * Create a new module.
+     *
+     * @param string $directory Where is this module installed
+     */
+    public function __construct($directory)
+    {
+        parent::__construct($directory);
 
-		// Create/update the database tables.
-		Database::updateSchema(self::SCHEMA_MIGRATION_PREFIX, self::SCHEMA_SETTING_NAME, self::SCHEMA_TARGET_VERSION);
-	}
+        // Create/update the database tables.
+        Database::updateSchema(self::SCHEMA_MIGRATION_PREFIX, self::SCHEMA_SETTING_NAME, self::SCHEMA_TARGET_VERSION);
+    }
 
-	/**
-	 * How should this module be labelled on tabs, menus, etc.?
-	 *
-	 * @return string
-	 */
-	public function getTitle() {
-		return /* I18N: Name of a module */ I18N::translate('News');
-	}
+    /**
+     * How should this module be labelled on tabs, menus, etc.?
+     *
+     * @return string
+     */
+    public function getTitle()
+    {
+        /* I18N: Name of a module */
+        return I18N::translate('News');
+    }
 
-	/**
-	 * A sentence describing what this module does.
-	 *
-	 * @return string
-	 */
-	public function getDescription() {
-		return /* I18N: Description of the “News” module */ I18N::translate('Family news and site announcements.');
-	}
+    /**
+     * A sentence describing what this module does.
+     *
+     * @return string
+     */
+    public function getDescription()
+    {
+        /* I18N: Description of the “News” module */
+        return I18N::translate('Family news and site announcements.');
+    }
 
-	/**
-	 * Generate the HTML content of this block.
-	 *
-	 * @param int      $block_id
-	 * @param bool     $template
-	 * @param string[] $cfg
-	 *
-	 * @return string
-	 */
-	public function getBlock($block_id, $template = true, $cfg = []): string {
-		global $WT_TREE;
+    /**
+     * Generate the HTML content of this block.
+     *
+     * @param Tree     $tree
+     * @param int      $block_id
+     * @param bool     $template
+     * @param string[] $cfg
+     *
+     * @return string
+     */
+    public function getBlock(Tree $tree, int $block_id, bool $template = true, array $cfg = []): string
+    {
+        $articles = Database::prepare(
+            "SELECT news_id, user_id, gedcom_id, UNIX_TIMESTAMP(updated) + :offset AS updated, subject, body FROM `##news` WHERE gedcom_id = :tree_id ORDER BY updated DESC"
+        )->execute([
+            'offset'  => WT_TIMESTAMP_OFFSET,
+            'tree_id' => $tree->getTreeId(),
+        ])->fetchAll();
 
-		$articles = Database::prepare(
-			"SELECT news_id, user_id, gedcom_id, UNIX_TIMESTAMP(updated) + :offset AS updated, subject, body FROM `##news` WHERE gedcom_id = :tree_id ORDER BY updated DESC"
-		)->execute([
-			'offset'  => WT_TIMESTAMP_OFFSET,
-			'tree_id' => $WT_TREE->getTreeId(),
-		])->fetchAll();
+        $content = view('modules/gedcom_news/list', [
+            'articles' => $articles,
+            'block_id' => $block_id,
+            'limit'    => 5,
+        ]);
 
-		$content = view('blocks/news', [
-			'articles' => $articles,
-			'block_id' => $block_id,
-			'limit'    => 5,
-		]);
+        if ($template) {
+            return view('modules/block-template', [
+                'block'      => str_replace('_', '-', $this->getName()),
+                'id'         => $block_id,
+                'config_url' => '',
+                'title'      => $this->getTitle(),
+                'content'    => $content,
+            ]);
+        } else {
+            return $content;
+        }
+    }
 
-		if ($template) {
-			return view('blocks/template', [
-				'block'      => str_replace('_', '-', $this->getName()),
-				'id'         => $block_id,
-				'config_url' => '',
-				'title'      => $this->getTitle(),
-				'content'    => $content,
-			]);
-		} else {
-			return $content;
-		}
-	}
+    /** {@inheritdoc} */
+    public function loadAjax(): bool
+    {
+        return false;
+    }
 
-	/** {@inheritdoc} */
-	public function loadAjax(): bool {
-		return false;
-	}
+    /** {@inheritdoc} */
+    public function isUserBlock(): bool
+    {
+        return false;
+    }
 
-	/** {@inheritdoc} */
-	public function isUserBlock(): bool {
-		return false;
-	}
+    /** {@inheritdoc} */
+    public function isGedcomBlock(): bool
+    {
+        return true;
+    }
 
-	/** {@inheritdoc} */
-	public function isGedcomBlock(): bool {
-		return true;
-	}
+    /**
+     * An HTML form to edit block settings
+     *
+     * @param Tree $tree
+     * @param int  $block_id
+     *
+     * @return void
+     */
+    public function configureBlock(Tree $tree, int $block_id)
+    {
+    }
 
-	/**
-	 * An HTML form to edit block settings
-	 *
-	 * @param int $block_id
-	 *
-	 * @return void
-	 */
-	public function configureBlock($block_id) {
-	}
+    /**
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function getEditNewsAction(Request $request, Tree $tree): Response
+    {
+        if (!Auth::isManager($tree)) {
+            throw new AccessDeniedHttpException();
+        }
 
-	/**
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function getEditNewsAction(Request $request): Response {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $news_id = $request->get('news_id');
 
-		if (!Auth::isManager($tree)) {
-			throw new AccessDeniedHttpException;
-		}
+        if ($news_id > 0) {
+            $row = Database::prepare(
+                "SELECT subject, body FROM `##news` WHERE news_id = :news_id AND gedcom_id = :tree_id"
+            )->execute([
+                'news_id' => $news_id,
+                'tree_id' => $tree->getTreeId(),
+            ])->fetchOneRow();
+        } else {
+            $row = (object)[
+                'body'    => '',
+                'subject' => '',
+            ];
+        }
 
-		$news_id = $request->get('news_id');
+        $title = I18N::translate('Add/edit a journal/news entry');
 
-		if ($news_id > 0) {
-			$row = Database::prepare(
-				"SELECT subject, body FROM `##news` WHERE news_id = :news_id AND gedcom_id = :tree_id"
-			)->execute([
-				'news_id' => $news_id,
-				'tree_id' => $tree->getTreeId(),
-			])->fetchOneRow();
-		} else {
-			$row = (object) [
-				'body'    => '',
-				'subject' => '',
-			];
-		}
+        return $this->viewResponse('modules/gedcom_news/edit', [
+            'body'    => $row->body,
+            'news_id' => $news_id,
+            'subject' => $row->subject,
+            'title'   => $title,
+        ]);
+    }
 
-		$title = I18N::translate('Add/edit a journal/news entry');
+    /**
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function postEditNewsAction(Request $request, Tree $tree): RedirectResponse
+    {
+        if (!Auth::isManager($tree)) {
+            throw new AccessDeniedHttpException();
+        }
 
-		return $this->viewResponse('blocks/news-edit', [
-			'body'    => $row->body,
-			'news_id' => $news_id,
-			'subject' => $row->subject,
-			'title'   => $title,
-		]);
-	}
+        $news_id = $request->get('news_id');
+        $subject = $request->get('subject');
+        $body    = $request->get('body');
 
-	/**
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function postEditNewsAction(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        if ($news_id > 0) {
+            Database::prepare(
+                "UPDATE `##news` SET subject = :subject, body = :body, updated = CURRENT_TIMESTAMP" .
+                " WHERE news_id = :news_id AND gedcom_id = :tree_id"
+            )->execute([
+                'subject' => $subject,
+                'body'    => $body,
+                'news_id' => $news_id,
+                'tree_id' => $tree->getTreeId(),
+            ]);
+        } else {
+            Database::prepare(
+                "INSERT INTO `##news` (gedcom_id, subject, body, updated) VALUES (:tree_id, :subject ,:body, CURRENT_TIMESTAMP)"
+            )->execute([
+                'body'    => $body,
+                'subject' => $subject,
+                'tree_id' => $tree->getTreeId(),
+            ]);
+        }
 
-		if (!Auth::isManager($tree)) {
-			throw new AccessDeniedHttpException;
-		}
+        $url = route('tree-page', [
+            'ged' => $tree->getName(),
+        ]);
 
-		$news_id = $request->get('news_id');
-		$subject = $request->get('subject');
-		$body    = $request->get('body');
+        return new RedirectResponse($url);
+    }
 
-		if ($news_id > 0) {
-			Database::prepare(
-				"UPDATE `##news` SET subject = :subject, body = :body, updated = CURRENT_TIMESTAMP" .
-				" WHERE news_id = :news_id AND gedcom_id = :tree_id"
-			)->execute([
-				'subject' => $subject,
-				'body'    => $body,
-				'news_id' => $news_id,
-				'tree_id' => $tree->getTreeId(),
-			]);
-		} else {
-			Database::prepare(
-				"INSERT INTO `##news` (gedcom_id, subject, body, updated) VALUES (:tree_id, :subject ,:body, CURRENT_TIMESTAMP)"
-			)->execute([
-				'body'    => $body,
-				'subject' => $subject,
-				'tree_id' => $tree->getTreeId(),
-			]);
-		}
+    /**
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return RedirectResponse
+     */
+    public function postDeleteNewsAction(Request $request, Tree $tree): RedirectResponse
+    {
+        $news_id = $request->get('news_id');
 
-		$url = route('home-page', [
-			'ged' => $tree->getName(),
-		]);
+        if (!Auth::isManager($tree)) {
+            throw new AccessDeniedHttpException();
+        }
 
-		return new RedirectResponse($url);
-	}
+        Database::prepare(
+            "DELETE FROM `##news` WHERE news_id = :news_id AND gedcom_id = :tree_id"
+        )->execute([
+            'news_id' => $news_id,
+            'tree_id' => $tree->getTreeId(),
+        ]);
 
-	/**
-	 * @param Request $request
-	 *
-	 * @return RedirectResponse
-	 */
-	public function postDeleteNewsAction(Request $request): RedirectResponse {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+        $url = route('tree-page', [
+            'ged' => $tree->getName(),
+        ]);
 
-		$news_id = $request->get('news_id');
-
-		if (!Auth::isManager($tree)) {
-			throw new AccessDeniedHttpException;
-		}
-
-		Database::prepare(
-			"DELETE FROM `##news` WHERE news_id = :news_id AND gedcom_id = :tree_id"
-		)->execute([
-			'news_id' => $news_id,
-			'tree_id' => $tree->getTreeId(),
-		]);
-
-		$url = route('home-page', [
-			'ged' => $tree->getName(),
-		]);
-
-		return new RedirectResponse($url);
-	}
+        return new RedirectResponse($url);
+    }
 }

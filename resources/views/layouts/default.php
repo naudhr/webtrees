@@ -28,6 +28,12 @@
 		<link rel="icon" type="image/png" href="<?= Theme::theme()::ASSET_DIR ?>favicon192.png" sizes="192x192">
 		<link rel="apple-touch-icon" sizes="180x180" href="<?= Theme::theme()::ASSET_DIR ?>favicon180.png">
 
+		<?php if (I18N::direction() === 'rtl'): ?>
+			<link rel="stylesheet" type="text/css" href="<?= e(WT_ASSETS_URL . 'css/vendor-rtl.css') ?>">
+		<?php else: ?>
+			<link rel="stylesheet" type="text/css" href="<?= e(WT_ASSETS_URL . 'css/vendor.css') ?>">
+		<?php endif ?>
+
 		<?php foreach (Theme::theme()->stylesheets() as $stylesheet): ?>
 			<link rel="stylesheet" type="text/css" href="<?=  $stylesheet ?>">
 		<?php endforeach ?>
@@ -62,7 +68,7 @@
 									<input type="search" class="form-control wt-header-search-field" id="quick-search" name="query" size="15" placeholder="<?= I18N::translate('Search') ?>">
 									<span class="input-group-btn">
 										<button type="submit" class="btn btn-primary wt-header-search-button">
-											<i class="fas fa-search"></i>
+                                            <?= view('icons/search') ?>
 										</button>
 									</span>
 								</div>
@@ -112,13 +118,20 @@
 			<div class="wt-footer-content container d-print-none">
 				<?= Theme::theme()->formatContactLinks() ?>
 				<?= Theme::theme()->logoPoweredBy() ?>
-				<?= Theme::theme()->formatPageViews(123) ?>
+
+				<?php if ($page_hits ?? 0 > 0): ?>
+				<div class="wt-page-views">
+					<?= I18N::plural('This page has been viewed %s time.', 'This page has been viewed %s times.', $page_hits,
+					'<span class="odometer">' . I18N::digits($page_hits) . '</span>') ?>
+				</div>
+				<?php endif ?>
+
 				<?= Theme::theme()->cookieWarning()?>
 			</div>
 		</footer>
 
-		<script async src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
-		<script async src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
+		<script async src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>?<?= filemtime(WT_ROOT . WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
+		<script async src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>?<?= filemtime(WT_ROOT . WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
 
 		<script>
       activate_colorbox();

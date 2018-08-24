@@ -4,7 +4,7 @@
 <?php use Fisharebest\Webtrees\Site; ?>
 <?php use Fisharebest\Webtrees\View; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -221,7 +221,7 @@
 				</th>
 				<th>
 					<button class="btn btn-primary" id="add-resn" type="button">
-						<i class="fas fa-plus"></i>
+              <?= view('icons/add') ?>
 						<?= /* I18N: A button label. */ I18N::translate('add') ?>
 					</button>
 				</th>
@@ -235,7 +235,7 @@
 							<a href="<?= e($privacy_restriction->record->url()) ?>"><?= $privacy_restriction->record->getFullName() ?></a>
 						<?php elseif ($privacy_restriction->xref): ?>
 							<div class="text-danger">
-								<?= $privacy_restriction->xref ?> — <?= I18N::translate('this record does not exist') ?>
+								<?= $privacy_restriction->xref ?> — <?= I18N::translate('This record does not exist.') ?>
 							</div>
 						<?php else: ?>
 							<div class="text-muted">
@@ -269,11 +269,11 @@
 	<div class="row form-group">
 		<div class="offset-sm-4 col-sm-8">
 			<button type="submit" class="btn btn-primary">
-				<i class="fas fa-check">
+				<?= view('icons/save') ?>
 				<?= I18N::translate('save') ?>
 			</button>
 			<a class="btn btn-secondary" href="<?= route('admin-trees', ['ged' => $tree->getName()]) ?>">
-				<i class="fas times">
+				<?= view('icons/cancel') ?>
 				<?= I18N::translate('cancel') ?>
 			</a>
 			<!-- Coming soon

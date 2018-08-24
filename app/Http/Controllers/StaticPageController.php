@@ -17,43 +17,31 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\Controllers;
 
-use Fisharebest\Webtrees\Auth;
-use Fisharebest\Webtrees\Database;
-use Fisharebest\Webtrees\DebugBar;
-use Fisharebest\Webtrees\Html;
 use Fisharebest\Webtrees\I18N;
-use Fisharebest\Webtrees\Module;
-use Fisharebest\Webtrees\Module\ModuleBlockInterface;
-use Fisharebest\Webtrees\Site;
 use Fisharebest\Webtrees\Tree;
-use Fisharebest\Webtrees\User;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Controller for static pages.
  */
-class StaticPageController extends AbstractBaseController {
-	/**
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function privacyPolicy(Request $request): Response {
-		/** @var Tree $tree */
-		$tree = $request->attributes->get('tree');
+class StaticPageController extends AbstractBaseController
+{
+    /**
+     * @param Tree $tree
+     *
+     * @return Response
+     */
+    public function privacyPolicy(Tree $tree): Response
+    {
+        $title = I18N::translate('Privacy policy');
 
-		$title = I18N::translate('Privacy policy');
+        $uses_analytics = true;
 
-		$uses_analytics = true;
-
-		return $this->viewResponse('privacy-policy', [
-			'uses_analytics' => $uses_analytics,
-			'title'          => $title,
-			'tree'           => $tree,
-		]);
-	}
+        return $this->viewResponse('privacy-policy', [
+            'uses_analytics' => $uses_analytics,
+            'title'          => $title,
+            'tree'           => $tree,
+        ]);
+    }
 }

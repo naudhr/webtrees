@@ -3,7 +3,7 @@
 <?php use Fisharebest\Webtrees\I18N; ?>
 <?php use Fisharebest\Webtrees\Site; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -69,12 +69,12 @@
 	<div class="row form-group">
 		<div class="offset-sm-3 col-sm-9">
 			<button type="submit" class="btn btn-primary">
-				<i class="fas fa-check"></i>
+				<?= view('icons/save') ?>
 				<?= I18N::translate('save') ?>
 			</button>
 
 			<a href="<?= e(route('admin-control-panel')) ?>" class="btn btn-secondary">
-				<i class="fas fa-times"></i>
+				<?= view('icons/cancel') ?>
 				<?= I18N::translate('cancel') ?>
 			</a>
 		</div>

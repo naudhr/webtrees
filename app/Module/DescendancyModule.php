@@ -17,223 +17,228 @@ namespace Fisharebest\Webtrees\Module;
 
 use Fisharebest\Webtrees\Database;
 use Fisharebest\Webtrees\Family;
-use Fisharebest\Webtrees\Filter;
 use Fisharebest\Webtrees\FontAwesome;
 use Fisharebest\Webtrees\I18N;
 use Fisharebest\Webtrees\Individual;
 use Fisharebest\Webtrees\Tree;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class DescendancyModule
  */
-class DescendancyModule extends AbstractModule implements ModuleSidebarInterface {
-	/** {@inheritdoc} */
-	public function getTitle() {
-		return /* I18N: Name of a module/sidebar */
-			I18N::translate('Descendants');
-	}
+class DescendancyModule extends AbstractModule implements ModuleSidebarInterface
+{
+    /** {@inheritdoc} */
+    public function getTitle()
+    {
+        /* I18N: Name of a module/sidebar */
+        return I18N::translate('Descendants');
+    }
 
-	/** {@inheritdoc} */
-	public function getDescription() {
-		return /* I18N: Description of the “Descendants” module */
-			I18N::translate('A sidebar showing the descendants of an individual.');
-	}
+    /** {@inheritdoc} */
+    public function getDescription()
+    {
+        /* I18N: Description of the “Descendants” module */
+        return I18N::translate('A sidebar showing the descendants of an individual.');
+    }
 
-	/**
-	 * This is a general purpose hook, allowing modules to respond to routes
-	 * of the form module.php?mod=FOO&mod_action=BAR
-	 *
-	 * @param string $mod_action
-	 */
-	public function modAction($mod_action) {
-		global $WT_TREE;
+    /**
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function getSearchAction(Request $request, Tree $tree): Response
+    {
+        $search = $request->get('search', '');
 
-		header('Content-Type: text/html; charset=UTF-8');
+        $html = '';
 
-		switch ($mod_action) {
-			case 'search':
-				$search = Filter::get('search');
-				echo $this->search($search, $WT_TREE);
-				break;
-			case 'descendants':
-				$individual = Individual::getInstance(Filter::get('xref', WT_REGEX_XREF), $WT_TREE);
-				if ($individual) {
-					echo $this->loadSpouses($individual, 1);
-				}
-				break;
-			default:
-				http_response_code(404);
-				break;
-		}
-	}
+        if (strlen($search) >= 2) {
+            $rows = Database::prepare(
+                "SELECT i_id AS xref" .
+                " FROM `##individuals`" .
+                " JOIN `##name` ON i_id = n_id AND i_file = n_file" .
+                " WHERE n_sort LIKE CONCAT('%', :query, '%') AND i_file = :tree_id" .
+                " ORDER BY n_sort"
+            )->execute([
+                'query'   => $search,
+                'tree_id' => $tree->getTreeId(),
+            ])->fetchAll();
 
-	/** {@inheritdoc} */
-	public function defaultSidebarOrder() {
-		return 30;
-	}
+            foreach ($rows as $row) {
+                $individual = Individual::getInstance($row->xref, $tree);
+                if ($individual !== null && $individual->canShow()) {
+                    $html .= $this->getPersonLi($individual);
+                }
+            }
+        }
 
-	/** {@inheritdoc} */
-	public function hasSidebarContent(Individual $individual) {
-		return true;
-	}
+        if ($html !== '') {
+            $html = '<ul>' . $html . '</ul>';
+        }
 
-	/** {@inheritdoc} */
-	public function getSidebarAjaxContent() {
-		return '';
-	}
+        return new Response($html);
+    }
 
-	/**
-	 * Load this sidebar synchronously.
-	 *
-	 * @param Individual $individual
-	 *
-	 * @return string
-	 */
-	public function getSidebarContent(Individual $individual) {
-		return view('modules/descendancy', [
-			'individual_list' => $this->getPersonLi($individual, 1),
-		]);
-	}
+    /**
+     * @param Request $request
+     * @param Tree    $tree
+     *
+     * @return Response
+     */
+    public function getDescendantsAction(Request $request, Tree $tree): Response
+    {
+        $xref = $request->get('xref');
 
-	/**
-	 * Format an individual in a list.
-	 *
-	 * @param Individual $person
-	 * @param int        $generations
-	 *
-	 * @return string
-	 */
-	public function getPersonLi(Individual $person, $generations = 0) {
-		$icon     = $generations > 0 ? 'icon-minus' : 'icon-plus';
-		$lifespan = $person->canShow() ? '(' . $person->getLifeSpan() . ')' : '';
-		$spouses  = $generations > 0 ? $this->loadSpouses($person, 0) : '';
+        $individual = Individual::getInstance($xref, $tree);
 
-		return
-			'<li class="sb_desc_indi_li">' .
-			'<a class="sb_desc_indi" href="module.php?mod=' . $this->getName() . '&amp;mod_action=descendants&amp;xref=' . $person->getXref() . '">' .
-			'<i class="plusminus ' . $icon . '"></i>' .
-			$person->getSexImage() . $person->getFullName() . $lifespan .
-			'</a>' .
-			FontAwesome::linkIcon('individual', $person->getFullName(), ['href' => $person->url()]) .
-			'<div>' . $spouses . '</div>' .
-			'</li>';
-	}
+        if ($individual !== null && $individual->canShow()) {
+            $html = $this->loadSpouses($individual, 1);
+        } else {
+            $html = '';
+        }
 
-	/**
-	 * Format a family in a list.
-	 *
-	 * @param Family     $family
-	 * @param Individual $person
-	 * @param int        $generations
-	 *
-	 * @return string
-	 */
-	public function getFamilyLi(Family $family, Individual $person, $generations = 0) {
-		$spouse = $family->getSpouse($person);
-		if ($spouse) {
-			$spouse_name = $spouse->getSexImage() . $spouse->getFullName();
-			$spouse_link = FontAwesome::linkIcon('individual', $spouse->getFullName(), ['href' => $person->url()]);
-		} else {
-			$spouse_name = '';
-			$spouse_link = '';
-		}
+        return new Response($html);
+    }
 
-		$marryear = $family->getMarriageYear();
-		$marr     = $marryear ? '<i class="icon-rings"></i>' . $marryear : '';
+    /** {@inheritdoc} */
+    public function defaultSidebarOrder()
+    {
+        return 30;
+    }
 
-		return
-			'<li class="sb_desc_indi_li">' .
-			'<a class="sb_desc_indi" href="#"><i class="plusminus icon-minus"></i>' . $spouse_name . $marr . '</a>' .
-			$spouse_link .
-			FontAwesome::linkIcon('family', $family->getFullName(), ['href' => $family->url()]) .
-		 '<div>' . $this->loadChildren($family, $generations) . '</div>' .
-			'</li>';
-	}
+    /** {@inheritdoc} */
+    public function hasSidebarContent(Individual $individual)
+    {
+        return true;
+    }
 
-	/**
-	 * Respond to an autocomplete search request.
-	 *
-	 * @param string $query Search for this term
-	 * @param Tree   $tree  Search in this tree
-	 *
-	 * @return string
-	 */
-	public function search($query, Tree $tree) {
-		if (strlen($query) < 2) {
-			return '';
-		}
+    /**
+     * Load this sidebar synchronously.
+     *
+     * @param Individual $individual
+     *
+     * @return string
+     */
+    public function getSidebarContent(Individual $individual)
+    {
+        return view('modules/descendancy/sidebar', [
+            'individual_list' => $this->getPersonLi($individual, 1),
+        ]);
+    }
 
-		$rows = Database::prepare(
-			"SELECT i_id AS xref" .
-			" FROM `##individuals`" .
-			" JOIN `##name` ON i_id = n_id AND i_file = n_file" .
-			" WHERE n_sort LIKE CONCAT('%', :query, '%') AND i_file = :tree_id" .
-			" ORDER BY n_sort"
-		)->execute([
-			'query'   => $query,
-			'tree_id' => $tree->getTreeId(),
-		])->fetchAll();
+    /**
+     * Format an individual in a list.
+     *
+     * @param Individual $person
+     * @param int        $generations
+     *
+     * @return string
+     */
+    public function getPersonLi(Individual $person, $generations = 0)
+    {
+        $icon     = $generations > 0 ? 'icon-minus' : 'icon-plus';
+        $lifespan = $person->canShow() ? '(' . $person->getLifeSpan() . ')' : '';
+        $spouses  = $generations > 0 ? $this->loadSpouses($person, 0) : '';
 
-		$out = '';
-		foreach ($rows as $row) {
-			$person = Individual::getInstance($row->xref, $tree);
-			if ($person && $person->canShowName()) {
-				$out .= $this->getPersonLi($person);
-			}
-		}
-		if ($out) {
-			return '<ul>' . $out . '</ul>';
-		} else {
-			return '';
-		}
-	}
+        return
+            '<li class="sb_desc_indi_li">' .
+            '<a class="sb_desc_indi" href="' . e(route('module', [
+                'module' => 'descendancy',
+                'action' => 'Descendants',
+                'ged'    => $person->getTree()->getName(),
+                'xref'   => $person->getXref(),
+            ])) . '">' .
+            '<i class="plusminus ' . $icon . '"></i>' .
+            $person->getSexImage() . $person->getFullName() . $lifespan .
+            '</a>' .
+            FontAwesome::linkIcon('individual', $person->getFullName(), ['href' => $person->url()]) .
+            '<div>' . $spouses . '</div>' .
+            '</li>';
+    }
 
-	/**
-	 * Display spouses.
-	 *
-	 * @param Individual $person
-	 * @param int        $generations
-	 *
-	 * @return string
-	 */
-	public function loadSpouses(Individual $person, $generations) {
-		$out = '';
-		if ($person && $person->canShow()) {
-			foreach ($person->getSpouseFamilies() as $family) {
-				$out .= $this->getFamilyLi($family, $person, $generations - 1);
-			}
-		}
-		if ($out) {
-			return '<ul>' . $out . '</ul>';
-		} else {
-			return '';
-		}
-	}
+    /**
+     * Format a family in a list.
+     *
+     * @param Family     $family
+     * @param Individual $person
+     * @param int        $generations
+     *
+     * @return string
+     */
+    public function getFamilyLi(Family $family, Individual $person, $generations = 0)
+    {
+        $spouse = $family->getSpouse($person);
+        if ($spouse) {
+            $spouse_name = $spouse->getSexImage() . $spouse->getFullName();
+            $spouse_link = FontAwesome::linkIcon('individual', $spouse->getFullName(), ['href' => $person->url()]);
+        } else {
+            $spouse_name = '';
+            $spouse_link = '';
+        }
 
-	/**
-	 * Display descendants.
-	 *
-	 * @param Family $family
-	 * @param int    $generations
-	 *
-	 * @return string
-	 */
-	public function loadChildren(Family $family, $generations) {
-		$out = '';
-		if ($family->canShow()) {
-			$children = $family->getChildren();
-			if ($children) {
-				foreach ($children as $child) {
-					$out .= $this->getPersonLi($child, $generations - 1);
-				}
-			} else {
-				$out .= '<li class="sb_desc_none">' . I18N::translate('No children') . '</li>';
-			}
-		}
-		if ($out) {
-			return '<ul>' . $out . '</ul>';
-		} else {
-			return '';
-		}
-	}
+        $marryear = $family->getMarriageYear();
+        $marr     = $marryear ? '<i class="icon-rings"></i>' . $marryear : '';
+
+        return
+            '<li class="sb_desc_indi_li">' .
+            '<a class="sb_desc_indi" href="#"><i class="plusminus icon-minus"></i>' . $spouse_name . $marr . '</a>' .
+            $spouse_link .
+            FontAwesome::linkIcon('family', $family->getFullName(), ['href' => $family->url()]) .
+            '<div>' . $this->loadChildren($family, $generations) . '</div>' .
+            '</li>';
+    }
+
+    /**
+     * Display spouses.
+     *
+     * @param Individual $person
+     * @param int        $generations
+     *
+     * @return string
+     */
+    public function loadSpouses(Individual $person, $generations)
+    {
+        $out = '';
+        if ($person && $person->canShow()) {
+            foreach ($person->getSpouseFamilies() as $family) {
+                $out .= $this->getFamilyLi($family, $person, $generations - 1);
+            }
+        }
+        if ($out) {
+            return '<ul>' . $out . '</ul>';
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Display descendants.
+     *
+     * @param Family $family
+     * @param int    $generations
+     *
+     * @return string
+     */
+    public function loadChildren(Family $family, $generations)
+    {
+        $out = '';
+        if ($family->canShow()) {
+            $children = $family->getChildren();
+            if ($children) {
+                foreach ($children as $child) {
+                    $out .= $this->getPersonLi($child, $generations - 1);
+                }
+            } else {
+                $out .= '<li class="sb_desc_none">' . I18N::translate('No children') . '</li>';
+            }
+        }
+        if ($out) {
+            return '<ul>' . $out . '</ul>';
+        } else {
+            return '';
+        }
+    }
 }

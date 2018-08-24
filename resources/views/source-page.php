@@ -2,21 +2,19 @@
 <?php use Fisharebest\Webtrees\Bootstrap4; ?>
 <?php use Fisharebest\Webtrees\Functions\FunctionsPrint; ?>
 <?php use Fisharebest\Webtrees\Functions\FunctionsPrintFacts; ?>
-<?php use Fisharebest\Webtrees\Functions\FunctionsPrintLists; ?>
-<?php use Fisharebest\Webtrees\Html; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
 <?php if ($source->isPendingDeletion()): ?>
 	<?php if (Auth::isModerator($source->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This source has been deleted. You should review the deletion and then %1$s or %2$s it.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($source->getXref()) . '\', \'' . e($source->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($source->getXref()) . '\', \'' . e($source->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'reject') . '</a>') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This source has been deleted. You should review the deletion and then %1$s or %2$s it.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($source->getXref()) . '\', \'' . e($source->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($source->getXref()) . '\', \'' . e($source->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'reject') . '</a>') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php elseif (Auth::isEditor($source->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => I18N::translate('This source has been deleted. The deletion will need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => I18N::translate('This source has been deleted. The deletion will need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php endif ?>
 <?php elseif ($source->isPendingAddition()): ?>
 	<?php if (Auth::isModerator($source->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This source has been edited. You should review the changes and then %1$s or %2$s them.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($record->getXref()) . '\', \'' . e($record->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . $source->getXref() . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'reject') . '</a>' ) . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This source has been edited. You should review the changes and then %1$s or %2$s them.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($source->getXref()) . '\', \'' . e($source->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . $source->getXref() . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'reject') . '</a>' ) . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php elseif (Auth::isEditor($source->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => I18N::translate('This source has been edited. The changes need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => I18N::translate('This source has been edited. The changes need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php endif ?>
 <?php endif ?>
 
@@ -70,14 +68,14 @@
 				<?php endforeach ?>
 
 				<?php if ($source->canEdit()): ?>
-					<?php FunctionsPrint::printAddNewFact($source->getXref(), $facts, 'SOUR') ?>
+					<?php FunctionsPrint::printAddNewFact($source, $facts, 'SOUR') ?>
 					<?php if ($source->getTree()->getPreference('MEDIA_UPLOAD') >= Auth::accessLevel($source->getTree())): ?>
 						<tr>
 							<th scope="row">
 								<?= I18N::translate('Media object') ?>
 							</th>
 							<td>
-								<a href="<?= e(Html::url('edit_interface.php', ['action' => 'add-media-link', 'ged' => $source->getTree()->getName(), 'xref' => $source->getXref()])) ?>">
+								<a href="<?= e(route('add-fact', ['ged' => $source->getTree()->getName(), 'xref' => $source->getXref(), 'fact' => 'OBJE'])) ?>">
 									<?= I18N::translate('Add a media object') ?>
 								</a>
 							</td>
@@ -88,19 +86,19 @@
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="individuals">
-			<?= FunctionsPrintLists::individualTable($individuals) ?>
+			<?= view('lists/individuals-table', ['individuals' => $individuals, 'sosa' => false, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="families">
-			<?= FunctionsPrintLists::familyTable($families) ?>
+			<?= view('lists/families-table', ['families' => $families, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="media">
-			<?= FunctionsPrintLists::mediaTable($media_objects) ?>
+			<?= view('lists/media-table', ['media_objects' => $media_objects, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="notes">
-			<?= FunctionsPrintLists::noteTable($notes) ?>
+			<?= view('lists/notes-table', ['notes' => $notes, 'tree' => $tree]) ?>
 		</div>
 	</div>
 </div>
