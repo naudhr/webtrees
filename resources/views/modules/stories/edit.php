@@ -1,7 +1,7 @@
 <?php use Fisharebest\Webtrees\Functions\FunctionsEdit; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-modules') => I18N::translate('Modules'), route('module', ['module' => 'stories', 'action' => 'Admin', 'ged' => $tree->getName()]) => I18N::translate('Stories'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-modules') => I18N::translate('Modules'), route('module', ['module' => 'stories', 'action' => 'Admin', 'ged' => $tree->getName()]) => I18N::translate('Stories'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -47,15 +47,16 @@
 	<div class="row form-group">
 		<div class="offset-sm-3 col-sm-9">
 			<button type="submit" class="btn btn-primary">
-				<i class="fas fa-check"></i>
+                <?= view('icons/save') ?>
 				<?= I18N::translate('save') ?>
 			</button>
 
 			<a href="<?= e(route('module', ['module' => 'stories', 'action' => 'Admin', 'ged' => $tree->getName()])) ?>" class="btn btn-secondary">
-				<i class="fas fa-times"></i>
+                <?= view('icons/cancel') ?>
 				<?= I18N::translate('cancel') ?>
 			</a>
 		</div>
 	</div>
-
 </form>
+
+<?= view('modules/ckeditor/ckeditor-js') ?>

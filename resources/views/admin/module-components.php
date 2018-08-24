@@ -4,7 +4,7 @@
 <?php use Fisharebest\Webtrees\Module\ModuleConfigInterface; ?>
 <?php use Fisharebest\Webtrees\Tree; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-modules') => I18N::translate('Modules'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-modules') => I18N::translate('Modules'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -24,7 +24,10 @@
 				<tr>
 					<td>
 						<?php if ($module instanceof ModuleConfigInterface): ?>
-							<a href="<?= e($module->getConfigLink()) ?>"><?= $module->getTitle() ?> <i class="fas fa-cogs"></i></a>
+							<a href="<?= e($module->getConfigLink()) ?>">
+								<?= $module->getTitle() ?>
+                <?= view('icons/preferences') ?>
+							</a>
 						<?php else: ?>
 							<?= $module->getTitle() ?>
 						<?php endif ?>
@@ -53,7 +56,7 @@
 		</tbody>
 	</table>
 	<button class="btn btn-primary" type="submit">
-		<i class="fas fa-check"></i>
+		<?= view('icons/save') ?>
 		<?= I18N::translate('save') ?>
 	</button>
 </form>

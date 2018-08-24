@@ -1,5 +1,6 @@
 /*/
 !/GEDFact_assistant/
+!/address_report/
 !/ahnentafel_report/
 !/ancestors_chart/
 !/batch_update/
@@ -42,10 +43,13 @@
 !/missing_facts_report/
 !/notes/
 !/occupation_report/
+!/openstreetmap/
 !/page_menu/
+!/pedigree-map/
 !/pedigree_chart/
 !/pedigree_report/
 !/personal_facts/
+!/places/
 !/random_media/
 !/recent_changes/
 !/relationships_chart/

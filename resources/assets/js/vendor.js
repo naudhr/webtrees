@@ -13,17 +13,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import $ from  "jquery";
+import $ from "jquery";
 window.$ = window.jQuery = $;
+
 import "popper.js";
 import "bootstrap";
 import "datatables.net";
+
 window.Bloodhound = require("corejs-typeahead/dist/bloodhound.min.js");
 import "corejs-typeahead";
+
 import "datatables.net-bs4";
+
 // See https://github.com/RubaXa/Sortable/issues/1229
 window.Sortable = require('sortablejs');
+
 import "select2";
+
 import "moment";
+
 import "jquery-colorbox";
+
 import "wheelzoom";
+
+import "leaflet";
+import "leaflet-providers";
+window.GeoSearch = require("leaflet-geosearch");
+import "leaflet.markercluster";
+import "beautifymarker";

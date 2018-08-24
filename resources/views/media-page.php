@@ -3,22 +3,20 @@
 <?php use Fisharebest\Webtrees\FontAwesome; ?>
 <?php use Fisharebest\Webtrees\Functions\FunctionsPrint; ?>
 <?php use Fisharebest\Webtrees\Functions\FunctionsPrintFacts; ?>
-<?php use Fisharebest\Webtrees\Functions\FunctionsPrintLists; ?>
 <?php use Fisharebest\Webtrees\GedcomTag; ?>
-<?php use Fisharebest\Webtrees\Html; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 
 <?php if ($media->isPendingDeletion()): ?>
 	<?php if (Auth::isModerator($media->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This media object has been deleted. You should review the deletion and then %1$s or %2$s it.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'reject') . '</a>') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This media object has been deleted. You should review the deletion and then %1$s or %2$s it.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the deletion and then accept or reject it.', 'reject') . '</a>') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php elseif (Auth::isEditor($media->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => I18N::translate('This media object has been deleted. The deletion will need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => I18N::translate('This media object has been deleted. The deletion will need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php endif ?>
 <?php elseif ($media->isPendingAddition()): ?>
 	<?php if (Auth::isModerator($media->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This media object has been edited. You should review the changes and then %1$s or %2$s them.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'reject') . '</a>' ) . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => /* I18N: %1$s is “accept”, %2$s is “reject”. These are links. */ I18N::translate( 'This media object has been edited. You should review the changes and then %1$s or %2$s them.', '<a href="#" class="alert-link" onclick="accept_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'accept') . '</a>', '<a href="#" class="alert-link" onclick="reject_changes(\'' . e($media->getXref()) . '\', \'' . e($media->getTree()->getName()) . '\');">' . I18N::translateContext('You should review the changes and then accept or reject them.', 'reject') . '</a>' ) . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php elseif (Auth::isEditor($media->getTree())): ?>
-		<?= view('alerts/warning-dissmissible', ['alert' => I18N::translate('This media object has been edited. The changes need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
+		<?= view('components/alert-warning-dismissible', ['alert' => I18N::translate('This media object has been edited. The changes need to be reviewed by a moderator.') . ' ' . FunctionsPrint::helpLink('pending_changes')]) ?>
 	<?php endif ?>
 <?php endif ?>
 
@@ -111,16 +109,18 @@
 				</tr>
 				<?php endforeach ?>
 				<?php foreach ($facts as $fact): ?>
-					<?php FunctionsPrintFacts::printFact($fact, $media) ?>
+					<?php if ($fact->getTag() !== 'FILE'): ?>
+						<?php FunctionsPrintFacts::printFact($fact, $media) ?>
+					<?php endif ?>
 				<?php endforeach ?>
 				<?php if ($media->canEdit()): ?>
-					<?php FunctionsPrint::printAddNewFact($media->getXref(), $facts, 'OBJE') ?>
+					<?php FunctionsPrint::printAddNewFact($media, $facts, 'OBJE') ?>
 					<tr>
 						<th>
 							<?= I18N::translate('Source') ?>
 						</th>
 						<td>
-							<a href="<?= e(Html::url('edit_interface.php', ['action' => 'add', 'ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'SOUR'])) ?>">
+							<a href="<?= e(route('add-fact', ['ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'SOUR'])) ?>">
 								<?= I18N::translate('Add a source citation') ?>
 							</a>
 						</td>
@@ -130,7 +130,7 @@
 							<?= I18N::translate('Shared note') ?>
 						</th>
 						<td>
-							<a href="<?= e(Html::url('edit_interface.php', ['action' => 'add', 'ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'SHARED_NOTE'])) ?>">
+							<a href="<?= e(route('add-fact', ['ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'SHARED_NOTE'])) ?>">
 								<?= I18N::translate('Add a shared note') ?>
 							</a>
 						</td>
@@ -140,7 +140,7 @@
 							<?= I18N::translate('Restriction') ?>
 						</th>
 						<td>
-							<a href="<?= e(Html::url('edit_interface.php', ['action' => 'add', 'ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'RESN'])) ?>">
+							<a href="<?= e(route('add-fact', ['ged' => $media->getTree()->getName(), 'xref' => $media->getXref(), 'fact' => 'RESN'])) ?>">
 								<?= I18N::translate('Add a restriction') ?>
 							</a>
 						</td>
@@ -160,19 +160,19 @@
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="individuals">
-			<?= FunctionsPrintLists::individualTable($individuals) ?>
+			<?= view('lists/individuals-table', ['individuals' => $individuals, 'sosa' => false, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="families">
-			<?= FunctionsPrintLists::familyTable($families) ?>
+			<?= view('lists/families-table', ['families' => $families, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="sources">
-			<?= FunctionsPrintLists::sourceTable($sources) ?>
+			<?= view('lists/sources-table', ['sources' => $sources, 'tree' => $tree]) ?>
 		</div>
 
 		<div class="tab-pane fade" role="tabpanel" id="notes">
-			<?= FunctionsPrintLists::noteTable($notes) ?>
+			<?= view('lists/notes-table', ['notes' => $notes, 'tree' => $tree]) ?>
 		</div>
 	</div>
 </div>

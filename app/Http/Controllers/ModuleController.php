@@ -19,6 +19,8 @@ namespace Fisharebest\Webtrees\Http\Controllers;
 
 use Fisharebest\Webtrees\Auth;
 use Fisharebest\Webtrees\Module;
+use Fisharebest\Webtrees\Resolver;
+use Fisharebest\Webtrees\Tree;
 use Fisharebest\Webtrees\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,39 +30,46 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 /**
  * Controller for module actions.
  */
-class ModuleController extends AbstractBaseController {
-	/**
-	 * Perform an HTTP action for one of the modules.
-	 *
-	 * @param Request $request
-	 *
-	 * @return Response
-	 */
-	public function action(Request $request): Response {
-		/** @var User $user */
-		$user = $request->attributes->get('user');
+class ModuleController extends AbstractBaseController
+{
+    /**
+     * Perform an HTTP action for one of the modules.
+     *
+     * @param Request  $request
+     * @param User     $user
+     * @param Resolver $resolver
+     *
+     * @return Response
+     */
+    public function action(Request $request, User $user, Resolver $resolver): Response
+    {
+        $module_name = $request->get('module');
 
-		$module_name = $request->get('module');
+        // Check that the module is enabled.
+        // The module itself will need to check any tree-level access,
+        // which may be different for each component (tab, menu, etc.) of the module.
+        $module = Module::getModuleByName($module_name);
 
-		// Check that the module is enabled.
-		// The module itself will need to check any tree-level access,
-		// which may be different for each component (tab, menu, etc.) of the module.
-		$module = Module::getModuleByName($module_name);
+        // We'll call a function such as Module::getFooBarAction()
+        $verb   = strtolower($request->getMethod());
+        $action = $request->get('action');
+        $method = $verb . $action . 'Action';
 
-		// We'll call a function such as Module::getFooBarAction()
-		$verb   = strtolower($request->getMethod());
-		$action = $request->get('action');
-		$method = $verb . $action . 'Action';
+        // Actions with "Admin" in the name are for administrators only.
+        if (strpos($action, 'Admin') !== false && !Auth::isAdmin($user)) {
+            throw new AccessDeniedHttpException();
+        }
 
-		// Actions with "Admin" in the name are for administrators only.
-		if (strpos($action, 'Admin') !== false && !Auth::isAdmin($user)) {
-			throw new AccessDeniedHttpException;
-		}
+        if (method_exists($module, $method)) {
+            $response = $resolver->dispatch($module, $method);
 
-		if (method_exists($module, $method)) {
-			return $module->$method($request);
-		} else {
-			throw new NotFoundHttpException('Module not found');
-		}
-	}
+            if ($response instanceof Response) {
+                return $response;
+            } else {
+                return $this->viewResponse($response->name, $response->data);
+            }
+        } else {
+            throw new NotFoundHttpException('Module not found');
+        }
+    }
 }

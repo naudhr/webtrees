@@ -15,129 +15,179 @@
  */
 namespace Fisharebest\Webtrees;
 
+use Exception;
+
 /**
  * Simple view/template class.
  */
-class View {
-	/**
-	 * @var string The (file) name of the view.
-	 */
-	private $name;
+class View
+{
+    /**
+     * @var string The (file) name of the view.
+     */
+    private $name;
 
-	/**
-	 * @var mixed[] Data to be inserted into the view.
-	 */
-	private $data;
+    /**
+     * @var mixed[] Data to be inserted into the view.
+     */
+    private $data;
 
-	/**
-	 * @var mixed[] Data to be inserted into all views.
-	 */
-	private static $shared_data = [];
+    /**
+     * @var mixed[] Data to be inserted into all views.
+     */
+    private static $shared_data = [];
 
-	/**
-	 * @var string Implementation of Blade "stacks".
-	 */
-	private static $stack;
+    /**
+     * @var string Implementation of Blade "stacks".
+     */
+    private static $stack;
 
-	/**
-	 * @var array[] Implementation of Blade "stacks".
-	 */
-	private static $stacks = [];
+    /**
+     * @var array[] Implementation of Blade "stacks".
+     */
+    private static $stacks = [];
 
-	/**
-	 * Createa view from a template name and optional data.
-	 *
-	 * @param       $name
-	 * @param array $data
-	 */
-	public function __construct($name, $data = []) {
-		$this->name = $name;
-		$this->data = $data;
-	}
+    /**
+     * Createa view from a template name and optional data.
+     *
+     * @param string $name
+     * @param array  $data
+     */
+    public function __construct(string $name, $data = [])
+    {
+        $this->name = $name;
+        $this->data = $data;
+    }
 
-	/**
-	 * Shared data that is available to all views.
-	 */
-	public static function share($key, $value) {
-		self::$shared_data[$key] = $value;
-	}
+    /**
+     * Shared data that is available to all views.
+     *
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return void
+     */
+    public static function share(string $key, $value)
+    {
+        self::$shared_data[$key] = $value;
+    }
 
-	/**
-	 * Implementation of Blade "stacks".
-	 *
-	 * @see https://laravel.com/docs/5.5/blade#stacks
-	 */
-	public static function push(string $stack) {
-		self::$stack = $stack;
-		ob_start();
-	}
+    /**
+     * Implementation of Blade "stacks".
+     *
+     * @see https://laravel.com/docs/5.5/blade#stacks
+     *
+     * @param string $stack
+     *
+     * @return void
+     */
+    public static function push(string $stack)
+    {
+        self::$stack = $stack;
+        ob_start();
+    }
 
-	/**
-	 * Implementation of Blade "stacks".
-	 */
-	public static function endpush() {
-		self::$stacks[self::$stack][] = ob_get_clean();
-	}
+    /**
+     * Implementation of Blade "stacks".
+     *
+     * @return void
+     */
+    public static function endpush()
+    {
+        self::$stacks[self::$stack][] = ob_get_clean();
+    }
 
-	/**
-	 * Implementation of Blade "stacks".
-	 *
-	 * @return string
-	 */
-	public static function stack(string $stack): string {
-		$content = implode('', self::$stacks[$stack] ?? []);
+    /**
+     * Implementation of Blade "stacks".
+     *
+     * @param string $stack
+     *
+     * @return string
+     */
+    public static function stack(string $stack): string
+    {
+        $content = implode('', self::$stacks[$stack] ?? []);
 
-		self::$stacks[$stack] = [];
+        self::$stacks[$stack] = [];
 
-		return $content;
-	}
+        return $content;
+    }
 
-	/**
-	 * Render a view.
-	 *
-	 * @return string
-	 */
-	public function render() {
-		extract($this->data + self::$shared_data);
+    /**
+     * Render a view.
+     *
+     * @return string
+     */
+    public function render()
+    {
+        extract($this->data + self::$shared_data);
 
-		ob_start();
-		// Do not use require, so we can catch errors for missing files
-		include $this->getFilenameForView($this->name);
+        ob_start();
+        // Do not use require, so we can catch errors for missing files
+        include $this->getFilenameForView($this->name);
 
-		return ob_get_clean();
-	}
+        return ob_get_clean();
+    }
 
-	/**
-	 * Allow a theme to override the default views.
-	 *
-	 * @param string $view_name
-	 *
-	 * @return string
-	 */
-	public static function getFilenameForView($view_name) {
-		$view_file  = '/resources/views/' . $view_name . '.php';
-		$theme_view = WT_ROOT . WT_THEMES_DIR . Theme::theme()->themeId() . $view_file;
+    /**
+     * Allow a theme to override the default views.
+     *
+     * @param string $view_name
+     *
+     * @return string
+     * @throws Exception
+     */
+    public function getFilenameForView($view_name)
+    {
+        foreach ($this->paths() as $path) {
+            $view_file = $path . '/' . $view_name . '.php';
 
-		if (is_file($theme_view)) {
-			return $theme_view;
-		} else {
-			return WT_ROOT . $view_file;
-		}
-	}
+            if (is_file($view_file)) {
+                return $view_file;
+            }
+        }
 
-	/**
-	 * Cerate and render a view in a single operation.
-	 *
-	 * @param string  $name
-	 * @param mixed[] $data
-	 *
-	 * @return string
-	 */
-	public static function make($name, $data = []) {
-		$view = new static($name, $data);
+        throw new Exception('View not found: ' . e($view_name));
+    }
 
-		DebugBar::addView($name, $data);
+    /**
+     * Cerate and render a view in a single operation.
+     *
+     * @param string  $name
+     * @param mixed[] $data
+     *
+     * @return string
+     */
+    public static function make($name, $data = [])
+    {
+        $view = new static($name, $data);
 
-		return $view->render();
-	}
+        DebugBar::addView($name, $data);
+
+        return $view->render();
+    }
+
+    /**
+     * @return string[]
+     */
+    private function paths(): array
+    {
+        static $paths = [];
+
+        if (empty($paths)) {
+            // Module views
+            // @TODO - this includes disabled modules.
+            $paths = glob(WT_ROOT . WT_MODULES_DIR . '*/resources/views');
+            // Theme views
+            $paths[] = WT_ROOT . WT_THEMES_DIR . Theme::theme()->themeId() . '/resources/views';
+            // Core views
+            $paths[] = WT_ROOT . 'resources/views';
+
+            $paths = array_filter($paths, function (string $path): bool {
+                return is_dir($path);
+            });
+        }
+
+        return $paths;
+    }
 }

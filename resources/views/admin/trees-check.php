@@ -1,6 +1,6 @@
 <?php use Fisharebest\Webtrees\I18N; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), route('admin-trees') => I18N::translate('Manage family trees'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -13,8 +13,8 @@
 		<li class="list-group-item list-group-item-danger"><?= $error ?></li>
 	<?php endforeach ?>
 
-	<?php foreach ($warnings as $warnings): ?>
-		<li class="list-group-item list-group-item-warning"><?= $warnings ?></li>
+	<?php foreach ($warnings as $warning): ?>
+		<li class="list-group-item list-group-item-warning"><?= $warning ?></li>
 	<?php endforeach ?>
 
 	<?php if (empty($errors) && empty($warnings)): ?>

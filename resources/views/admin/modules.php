@@ -1,5 +1,4 @@
 <?php use Fisharebest\Webtrees\Bootstrap4; ?>
-<?php use Fisharebest\Webtrees\FontAwesome; ?>
 <?php use Fisharebest\Webtrees\I18N; ?>
 <?php use Fisharebest\Webtrees\Module\ModuleBlockInterface; ?>
 <?php use Fisharebest\Webtrees\Module\ModuleChartInterface; ?>
@@ -11,7 +10,7 @@
 <?php use Fisharebest\Webtrees\Module\ModuleThemeInterface; ?>
 <?php use Fisharebest\Webtrees\View; ?>
 
-<?= view('admin/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), $title]]) ?>
+<?= view('components/breadcrumbs', ['links' => [route('admin-control-panel') => I18N::translate('Control panel'), $title]]) ?>
 
 <h1><?= $title ?></h1>
 
@@ -90,7 +89,8 @@
 					<th scope="row" data-sort="<?= $module->getTitle() ?>" dir="auto">
 						<?php if ($module instanceof ModuleConfigInterface): ?>
 							<a href="<?= e($module->getConfigLink()) ?>">
-								<?= $module->getTitle() ?> <i class="fas fa-cogs"></i>
+								<?= $module->getTitle() ?>
+                <?= view('icons/preferences') ?>
 							</a>
 						<?php else: ?>
 							<?= $module->getTitle() ?>
@@ -103,7 +103,7 @@
 						<?= $module->getDescription() ?>
 						<?php if (!in_array($module->getName(), $core_module_names)): ?>
 							<br>
-							<i class="fas fa-asterisk"></i>
+                            <?= view('icons/warning') ?>
 							<?= I18N::translate('Custom module') ?>
 							<?php if ($module::CUSTOM_VERSION): ?>
 								- <?= I18N::translate('Version') ?> <?= $module::CUSTOM_VERSION ?>
@@ -117,21 +117,24 @@
 					</td>
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleMenuInterface): ?>
-							<?= FontAwesome::semanticIcon('menu', I18N::translate('Menu')) ?>
+							<?= view('icons/menu') ?>
+							<span class="sr-only"><?= I18N::translate('Menu') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
 					</td>
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleTabInterface): ?>
-							<?= FontAwesome::semanticIcon('tab', I18N::translate('Tabs')) ?>
+              <?= view('icons/tab') ?>
+							<span class="sr-only"><?= I18N::translate('Tabs') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
 					</td>
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleSidebarInterface): ?>
-							<?= FontAwesome::semanticIcon('sidebar', I18N::translate('Sidebar')) ?>
+              <?= view('icons/sidebar') ?>
+							<span class="sr-only"><?= I18N::translate('Sidebar') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
@@ -139,10 +142,12 @@
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleBlockInterface): ?>
 							<?php if ($module->isUserBlock()): ?>
-								<?= FontAwesome::semanticIcon('block-user', I18N::translate('My page')) ?>
+                <?= view('icons/block-user') ?>
+								<span class="sr-only"><?= I18N::translate('My page') ?></span>
 							<?php endif ?>
 							<?php if ($module->isUserBlock()): ?>
-								<?= FontAwesome::semanticIcon('block-tree', I18N::translate('Home page')) ?>
+                <?= view('icons/block-tree') ?>
+								<span class="sr-only"><?= I18N::translate('Home page') ?></span>
 							<?php endif ?>
 						<?php else: ?>
 							-
@@ -150,49 +155,60 @@
 					</td>
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleChartInterface): ?>
-							<?= FontAwesome::semanticIcon('chart', I18N::translate('Chart')) ?>
+              <?= view('icons/chart') ?>
+							<span class="sr-only"><?= I18N::translate('Chart') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
 					</td>
 					<td class="text-center text-muted d-none d-sm-table-cell">
 						<?php if ($module instanceof ModuleReportInterface): ?>
-							<?= FontAwesome::semanticIcon('report', I18N::translate('Report')) ?>
+              <?= view('icons/report') ?>
+							<span class="sr-only"><?= I18N::translate('Report') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
 					</td>
 					<td class="text-center text-muted d-none">
 						<?php if ($module instanceof ModuleThemeInterface): ?>
-							<?= FontAwesome::semanticIcon('theme', I18N::translate('Theme')) ?>
+              <?= view('icons/theme') ?>
+							<span class="sr-only"><?= I18N::translate('Theme') ?></span>
 						<?php else: ?>
 							-
 						<?php endif ?>
 					</td>
 					<td class="text-center text-muted d-sm-none">
 						<?php if ($module instanceof ModuleMenuInterface): ?>
-							<?= FontAwesome::semanticIcon('menu', I18N::translate('Menu')) ?>
+              <?= view('icons/menu') ?>
+							<span class="sr-only"><?= I18N::translate('Menu') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleTabInterface): ?>
-							<?= FontAwesome::semanticIcon('tab', I18N::translate('Tabs')) ?>
+                <?= view('icons/tab') ?>
+							<span class="sr-only"><?= I18N::translate('Tab') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleSidebarInterface): ?>
-							<?= FontAwesome::semanticIcon('sidebar', I18N::translate('Sidebar')) ?>
+                <?= view('icons/sidebar') ?>
+							<span class="sr-only"><?= I18N::translate('Sidebar') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleBlockInterface && $module->isUserBlock()): ?>
-							<?= FontAwesome::semanticIcon('block-user', I18N::translate('My page')) ?>
+                <?= view('icons/block-user') ?>
+							<span class="sr-only"><?= I18N::translate('My page') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleBlockInterface && $module->isUserBlock()): ?>
-							<?= FontAwesome::semanticIcon('block-tree', I18N::translate('Home page')) ?>
+                <?= view('icons/block-tree') ?>
+							<span class="sr-only"><?= I18N::translate('Home page') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleChartInterface): ?>
-							<?= FontAwesome::semanticIcon('chart', I18N::translate('Chart')) ?>
+                <?= view('icons/chart') ?>
+							<span class="sr-only"><?= I18N::translate('Chart') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleReportInterface): ?>
-							<?= FontAwesome::semanticIcon('report', I18N::translate('Report')) ?>
+                <?= view('icons/report') ?>
+							<span class="sr-only"><?= I18N::translate('Report') ?></span>
 						<?php endif ?>
 						<?php if ($module instanceof ModuleThemeInterface): ?>
-							<?= FontAwesome::semanticIcon('theme', I18N::translate('Theme')) ?>
+                <?= view('icons/theme') ?>
+							<span class="sr-only"><?= I18N::translate('Theme') ?></span>
 						<?php endif ?>
 					</td>
 				</tr>
@@ -200,7 +216,7 @@
 		</tbody>
 	</table>
 	<button class="btn btn-primary" type="submit">
-		<i class="fas fa-check"></i>
+		<?= view('icons/save') ?>
 		<?= I18N::translate('save') ?></button>
 </form>
 

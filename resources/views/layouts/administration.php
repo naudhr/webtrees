@@ -18,8 +18,10 @@
 		<?php else: ?>
 			<link rel="stylesheet" type="text/css" href="<?= e(WT_ASSETS_URL . 'css/vendor.css') ?>">
 		<?php endif ?>
-		<link rel="stylesheet" type="text/css" href="themes/_common/css-2.0.0/style.css">
-		<link rel="stylesheet" type="text/css" href="themes/_administration/css-2.0.0/style.css">
+		<link rel="stylesheet" type="text/css" href="<?= e(WT_ASSETS_URL . 'css/administration.css') ?>">
+
+		<?= View::stack('styles') ?>
+
 		<?= DebugBar::renderHead() ?>
 	</head>
 	<body class="container wt-global">
@@ -63,8 +65,8 @@
 
 		<?= $content ?>
 
-		<script src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
-		<script src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
+		<script src="<?= e(WT_ASSETS_URL . 'js/vendor.js') ?>?<?= filemtime(WT_ROOT . WT_ASSETS_URL . 'js/vendor.js') ?>"></script>
+		<script src="<?= e(WT_ASSETS_URL . 'js/webtrees.js') ?>?<?= filemtime(WT_ROOT . WT_ASSETS_URL . 'js/webtrees.js') ?>"></script>
 
 		<?= View::stack('javascript') ?>
 
